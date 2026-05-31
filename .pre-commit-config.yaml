@@ -3,7 +3,7 @@ repos:
     rev: v0.4.10
     hooks:
       - id: ruff
-        args: [--fix]
+        args: [ --fix ]
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-prettier
@@ -11,4 +11,3 @@ repos:
     hooks:
       - id: prettier
         files: ^frontend/
-        types_or: [javascript, jsx, ts, tsx, css, scss, html, json]
