@@ -1,0 +1,42 @@
+version: "3"
+
+tasks:
+  dev:run:
+    desc: "Run all services (backend, frontend, and db)"
+    cmds:
+      - docker-compose up -d
+
+  dev:stop:
+    desc: "Stop all services"
+    cmds:
+      - docker-compose down
+
+  dev:backend:run:
+    desc: "Run backend and db"
+    cmds:
+      - docker-compose up -d backend
+
+  dev:backend:stop:
+    desc: "Stop backend"
+    cmds:
+      - docker-compose stop backend
+
+  dev:frontend:run:
+    desc: "Run frontend"
+    cmds:
+      - docker-compose up -d frontend
+
+  dev:frontend:stop:
+    desc: "Stop frontend"
+    cmds:
+      - docker-compose stop frontend
+
+  dev:db:run:
+    desc: "Run database"
+    cmds:
+      - docker-compose up -d db
+
+  dev:db:stop:
+    desc: "Stop database"
+    cmds:
+      - docker-compose stop db
