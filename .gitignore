@@ -1,0 +1,23 @@
+# IDE directories
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# Backend (Python/Poetry)
+backend/.venv/
+backend/__pycache__/
+backend/*.pyc
+backend/.pytest_cache/
+backend/dist/
+
+# Frontend (Node/Vite)
+node_modules/
+frontend/electronic-department/dist/
+frontend/electronic-department/dist-ssr/
+frontend/electronic-department/*.local
+frontend/electronic-department/npm-debug.log*
+frontend/electronic-department/yarn-debug.log*
+frontend/electronic-department/yarn-error.log*
+frontend/electronic-department/pnpm-debug.log*
+frontend/electronic-department/lerna-debug.log*
