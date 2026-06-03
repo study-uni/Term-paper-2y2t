@@ -1,0 +1,68 @@
+/* Спільні стилі сторінок кафедри (використовуються у дочірніх view) */
+.page-container {
+  max-width: 900px;
+}
+
+.page-container h2 {
+  color: #1e293b;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-container p {
+  color: #64748b;
+  margin-bottom: 20px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.custom-input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.custom-select {
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: white;
+  font-size: 1rem;
+}
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.custom-table th,
+.custom-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.custom-table th {
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.badge {
+  background: #64748b;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
