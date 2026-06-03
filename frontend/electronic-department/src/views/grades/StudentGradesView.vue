@@ -1,8 +1,12 @@
 <script setup>
-import { computed } from 'vue';
-import { useDepartmentStore } from '../../stores/department';
-import { useAuthStore } from '../../stores/auth';
-import { useListControls } from '../../composables/useListControls';
+import { computed } from "vue";
+import { useDepartmentStore } from "../../stores/department";
+import { useAuthStore } from "../../stores/auth";
+import { useListControls } from "../../composables/useListControls";
+import DataTable from "primevue/datatable";
+import Column from "primevue/column";
+import InputText from "primevue/inputtext";
+import Select from "primevue/select";
 
 const department = useDepartmentStore();
 const auth = useAuthStore();
@@ -16,63 +20,93 @@ const gradesList = computed(() => {
   return department.studentGrades(id);
 });
 
-const { searchQuery, filterValue, filteredItems, toggleSort, sortIndicator } = useListControls(
+const { searchQuery, filterValue, filteredItems } = useListControls(
   gradesList,
-  ['discipline', 'teacher'],
-  (item, filter) => item.ECTS === filter
+  ["discipline", "teacher"],
+  (item, filter) => item.ECTS === filter,
 );
 
-const ectsOptions = ['Всі', 'A', 'B', 'C', 'D', 'E', 'F'];
+const ectsSelectOptions = [
+  { label: "Всі оцінки ECTS", value: "Всі" },
+  { label: "ECTS: A", value: "A" },
+  { label: "ECTS: B", value: "B" },
+  { label: "ECTS: C", value: "C" },
+  { label: "ECTS: D", value: "D" },
+  { label: "ECTS: E", value: "E" },
+  { label: "ECTS: F", value: "F" },
+];
 </script>
 
 <template>
   <div class="page-container">
     <h2><i class="pi pi-user"></i> Мої оцінки</h2>
     <p v-if="student">
-      Студент: <strong>{{ student.name }}</strong>,
-      група <span class="badge">{{ department.groupById(student.groupId)?.name }}</span>
+      Студент: <strong>{{ student.name }}</strong
+      >, група
+      <span class="badge">{{
+        department.groupById(student.groupId)?.name
+      }}</span>
     </p>
-    <p v-else class="alert-warn">Профіль студента не знайдено. Увійдіть знову під роллю «Студент».</p>
+    <p v-else class="alert-warn">
+      Профіль студента не знайдено. Увійдіть знову під роллю «Студент».
+    </p>
 
     <template v-if="student">
-      <div class="toolbar">
-        <input v-model="searchQuery" type="text" placeholder="Пошук за дисципліною..." class="custom-input" />
-        <select v-model="filterValue" class="custom-select">
-          <option v-for="opt in ectsOptions" :key="opt" :value="opt">
-            {{ opt === 'Всі' ? 'Всі оцінки ECTS' : `ECTS: ${opt}` }}
-          </option>
-        </select>
+      <div class="toolbar flex gap-3 items-center">
+        <InputText
+          v-model="searchQuery"
+          placeholder="Пошук за дисципліною..."
+          class="flex-1"
+        />
+        <Select
+          v-model="filterValue"
+          :options="ectsSelectOptions"
+          optionLabel="label"
+          optionValue="value"
+          class="w-64"
+        />
       </div>
 
-      <table class="custom-table">
-        <thead>
-          <tr>
-            <th class="sortable" @click="toggleSort('discipline')">Дисципліна{{ sortIndicator('discipline') }}</th>
-            <th>Викладач</th>
-            <th class="sortable" @click="toggleSort('grade')">Бал{{ sortIndicator('grade') }}</th>
-            <th>ECTS</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in filteredItems" :key="item.id">
-            <td><strong>{{ item.discipline }}</strong></td>
-            <td>{{ item.teacher }}</td>
-            <td class="grade-cell">{{ item.grade }}</td>
-            <td><span class="badge ects-badge">{{ item.ECTS }}</span></td>
-          </tr>
-          <tr v-if="filteredItems.length === 0">
-            <td colspan="4" class="empty-row">Оцінок не знайдено</td>
-          </tr>
-        </tbody>
-      </table>
+      <DataTable
+        :value="filteredItems"
+        class="p-datatable-sm"
+        responsiveLayout="scroll"
+      >
+        <Column
+          field="discipline"
+          header="Дисципліна"
+          sortable
+          style="font-weight: bold"
+        ></Column>
+        <Column field="teacher" header="Викладач"></Column>
+        <Column field="grade" header="Бал" sortable>
+          <template #body="slotProps">
+            <span class="grade-cell">{{ slotProps.data.grade }}</span>
+          </template>
+        </Column>
+        <Column field="ECTS" header="ECTS">
+          <template #body="slotProps">
+            <span class="badge ects-badge">{{ slotProps.data.ECTS }}</span>
+          </template>
+        </Column>
+      </DataTable>
     </template>
   </div>
 </template>
 
 <style scoped>
-.grade-cell { font-weight: bold; color: #1e3a8a; }
-.ects-badge { background-color: #10b981; }
-.sortable { cursor: pointer; }
-.empty-row { text-align: center; color: #94a3b8; }
-.alert-warn { background: #fef3c7; color: #92400e; padding: 12px; border-radius: 6px; margin-bottom: 12px; }
+.grade-cell {
+  font-weight: bold;
+  color: #1e3a8a;
+}
+.ects-badge {
+  background-color: #10b981;
+}
+.alert-warn {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
 </style>
