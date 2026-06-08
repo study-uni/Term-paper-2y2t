@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: postgrespassword
       POSTGRES_DB: electronic_department
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -19,14 +19,12 @@ services:
       dockerfile: Dockerfile
     container_name: academic_backend
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgrespassword@db:5432/electronic_department
       - SECRET_KEY=development_only_secret_key_12345
     volumes:
       - ./backend:/app
-      # Prevents mounting host .venv over container's built environment
-      - /app/.venv
     depends_on:
       - db
 

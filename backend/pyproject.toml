@@ -14,6 +14,7 @@ pydantic = {extras = ["email"], version = "^2.7.1"}
 pyjwt = {extras = ["crypto"], version = "^2.8.0"}
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 python-multipart = "^0.0.9"
+psycopg2-binary = "^2.9.9"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.0"
@@ -40,4 +41,4 @@ select = [
     "UP",  # pyupgrade
     "N",   # pep8-naming
 ]
-ignore = []
+ignore = ["B008"]
