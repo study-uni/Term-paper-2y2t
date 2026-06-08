@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useDepartmentStore } from "../../stores/department";
 import { useAuthStore } from "../../stores/auth";
 import { useListControls } from "../../composables/useListControls";
@@ -13,6 +13,15 @@ const auth = useAuthStore();
 
 const selectedDisciplineId = ref(null);
 const lastUpdatedStudent = ref("");
+
+// Fetch grades when selected discipline changes
+watch(selectedDisciplineId, async (newVal) => {
+  try {
+    await department.fetchGradesForTeacher(newVal);
+  } catch (e) {
+    console.error("Failed to fetch journal grades:", e);
+  }
+});
 
 const teacherId = computed(() => auth.profileId);
 const teacher = computed(() => department.teacherById(teacherId.value));
@@ -44,14 +53,18 @@ const { searchQuery, filteredItems } = useListControls(journalRows, [
   "subject",
 ]);
 
-const updateGrade = (row) => {
+const updateGrade = async (row) => {
   const value = Math.min(100, Math.max(0, Number(row.grade) || 0));
-  department.updateGrade(row.id, value);
-  row.grade = value;
-  lastUpdatedStudent.value = row.student;
-  setTimeout(() => {
-    lastUpdatedStudent.value = "";
-  }, 3000);
+  try {
+    await department.updateGrade(row.id, value);
+    row.grade = value;
+    lastUpdatedStudent.value = row.student;
+    setTimeout(() => {
+      lastUpdatedStudent.value = "";
+    }, 3000);
+  } catch (e) {
+    console.error("Failed to update grade:", e);
+  }
 };
 </script>
 

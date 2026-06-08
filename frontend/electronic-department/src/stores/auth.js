@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { useDepartmentStore } from "./department";
+import api from "../api";
 
 const STORAGE_KEY = "ed-auth";
 
@@ -56,49 +56,34 @@ export const useAuthStore = defineStore("auth", {
   },
 
   actions: {
-    login(userRole) {
-      this.role = userRole;
-      this.token = userRole === "guest" ? null : "mock-jwt-token";
-
-      if (userRole === "admin") {
-        this.profileId = null;
-        this.profileType = null;
-        this.user = { name: "Адміністратор Системи" };
-      } else if (userRole === "manager") {
-        this.profileId = null;
-        this.profileType = null;
-        this.user = { name: "Менеджер Кафедри" };
-      } else if (userRole === "teacher") {
-        const dept = useDepartmentStore();
-        const firstTeacher = dept.teachers[0];
-        if (firstTeacher) {
-          this.profileId = firstTeacher.id;
-          this.profileType = "teacher";
-          this.user = { name: firstTeacher.name };
-        } else {
-          this.profileId = null;
-          this.profileType = "teacher";
-          this.user = { name: "Викладач (Немає профілів)" };
-        }
-      } else if (userRole === "student") {
-        const dept = useDepartmentStore();
-        const firstStudent = dept.students[0];
-        if (firstStudent) {
-          this.profileId = firstStudent.id;
-          this.profileType = "student";
-          this.user = { name: firstStudent.name };
-        } else {
-          this.profileId = null;
-          this.profileType = "student";
-          this.user = { name: "Студент (Немає профілів)" };
-        }
-      } else {
+    async login(userRole, profileId = null) {
+      if (userRole === "guest") {
         this.role = "guest";
+        this.user = null;
+        this.token = null;
         this.profileId = null;
         this.profileType = null;
-        this.user = null;
+        this.persist();
+        return;
       }
-      this.persist();
+
+      try {
+        const response = await api.post("/auth/mock-login", {
+          role: userRole,
+          profile_id: profileId,
+        });
+
+        const data = response.data;
+        this.role = data.role;
+        this.token = data.access_token;
+        this.profileId = data.profile_id;
+        this.profileType = data.profile_type;
+        this.user = { name: data.name };
+        this.persist();
+      } catch (error) {
+        console.error("Login failed:", error);
+        throw error;
+      }
     },
     logout() {
       this.role = "guest";

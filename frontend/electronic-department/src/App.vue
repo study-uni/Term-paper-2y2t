@@ -1,25 +1,44 @@
 <script setup>
+import { onMounted } from "vue";
 import { useAuthStore } from "./stores/auth";
+import { useDepartmentStore } from "./stores/department";
 import { useRouter } from "vue-router";
 import Button from "primevue/button";
 
 const authStore = useAuthStore();
+const departmentStore = useDepartmentStore();
 const router = useRouter();
 
-const changeRole = (roleName) => {
-  authStore.login(roleName);
-  const defaultRoutes = {
-    teacher: "/journal",
-    student: "/my-grades",
-    admin: "/management",
-    manager: "/management",
-    guest: "/",
-  };
-  router.push(defaultRoutes[roleName] ?? "/");
+onMounted(async () => {
+  // Load public resources (info, teachers, disciplines)
+  await departmentStore.initPublic();
+
+  // If simulated role is active, load private resources (groups, students, grades)
+  if (authStore.role !== "guest") {
+    await departmentStore.initPrivate(authStore.role, authStore.profileId);
+  }
+});
+
+const changeRole = async (roleName) => {
+  try {
+    await authStore.login(roleName);
+    await departmentStore.initPrivate(authStore.role, authStore.profileId);
+    const defaultRoutes = {
+      teacher: "/journal",
+      student: "/my-grades",
+      admin: "/management",
+      manager: "/management",
+      guest: "/",
+    };
+    router.push(defaultRoutes[roleName] ?? "/");
+  } catch (e) {
+    console.error("Failed to login simulated role:", e);
+  }
 };
 
 const handleLogout = () => {
   authStore.logout();
+  departmentStore.clearPrivate();
   router.push("/");
 };
 </script>

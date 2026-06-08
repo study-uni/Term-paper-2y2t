@@ -40,60 +40,81 @@ const cancelEdit = () => {
   editForm.value = {};
 };
 
-const saveEdit = (type) => {
+const saveEdit = async (type) => {
   const id = editForm.value.id;
-  if (type === "group") department.updateGroup(id, editForm.value.name);
-  if (type === "student")
-    department.updateStudent(id, {
-      name: editForm.value.name,
-      groupId: editForm.value.groupId,
-    });
-  if (type === "teacher") {
-    department.updateTeacher(id, {
-      name: editForm.value.name,
-      position: editForm.value.position,
-      disciplineIds: [...editForm.value.disciplineIds],
-    });
+  try {
+    if (type === "group") await department.updateGroup(id, editForm.value.name);
+    if (type === "student") {
+      await department.updateStudent(id, {
+        name: editForm.value.name,
+        groupId: editForm.value.groupId,
+      });
+    }
+    if (type === "teacher") {
+      await department.updateTeacher(id, {
+        name: editForm.value.name,
+        position: editForm.value.position,
+        disciplineIds: [...editForm.value.disciplineIds],
+      });
+    }
+    if (type === "discipline") {
+      await department.updateDiscipline(id, {
+        name: editForm.value.name,
+        description: editForm.value.description,
+      });
+    }
+    cancelEdit();
+  } catch (e) {
+    console.error("Failed to save edit:", e);
   }
-  if (type === "discipline") {
-    department.updateDiscipline(id, {
-      name: editForm.value.name,
-      description: editForm.value.description,
-    });
-  }
-  cancelEdit();
 };
 
-const addGroup = () => {
+const addGroup = async () => {
   if (!newGroupName.value.trim()) return;
-  department.addGroup(newGroupName.value.trim());
-  newGroupName.value = "";
+  try {
+    await department.addGroup(newGroupName.value.trim());
+    newGroupName.value = "";
+  } catch (e) {
+    console.error("Failed to add group:", e);
+  }
 };
 
-const addStudent = () => {
+const addStudent = async () => {
   const gId = newStudent.value.groupId || groups.value[0]?.id;
   if (!newStudent.value.name.trim() || !gId) return;
-  department.addStudent(newStudent.value.name.trim(), gId);
-  newStudent.value.name = "";
+  try {
+    await department.addStudent(newStudent.value.name.trim(), gId);
+    newStudent.value.name = "";
+  } catch (e) {
+    console.error("Failed to add student:", e);
+  }
 };
 
-const addTeacher = () => {
+const addTeacher = async () => {
   if (!newTeacher.value.name.trim()) return;
-  department.addTeacher(
-    newTeacher.value.name.trim(),
-    newTeacher.value.position,
-    [...newTeacher.value.disciplineIds],
-  );
-  newTeacher.value = { name: "", position: "Асистент", disciplineIds: [] };
+  try {
+    await department.addTeacher(
+      newTeacher.value.name.trim(),
+      newTeacher.value.position,
+      [...newTeacher.value.disciplineIds],
+    );
+    newTeacher.value = { name: "", position: "Асистент", disciplineIds: [] };
+  } catch (e) {
+    console.error("Failed to add teacher:", e);
+  }
 };
 
-const addDiscipline = () => {
+const addDiscipline = async () => {
   if (!newDiscipline.value.name.trim()) return;
-  department.addDiscipline(
-    newDiscipline.value.name.trim(),
-    newDiscipline.value.description,
-  );
-  newDiscipline.value = { name: "", description: "" };
+  try {
+    await department.addDiscipline(
+      newDiscipline.value.name.trim(),
+      newDiscipline.value.description,
+    );
+    newDiscipline.value = { name: "", description: "" };
+  } catch (e) {
+    console.error("Failed to add discipline:", e);
+  }
 };
 
 const toggleDisciplineForTeacher = (disciplineId) => {

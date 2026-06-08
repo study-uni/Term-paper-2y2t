@@ -1,18 +1,29 @@
-# IDE directories
+# OS files
 .DS_Store
+**/.DS_Store
+
+# IDE directories
 .idea/
 .vscode/
 *.log
+**/*.log
 
-# Backend (Python/Poetry)
-backend/.venv/
-backend/__pycache__/
-backend/*.pyc
-backend/.pytest_cache/
+# Python / Poetry caches & virtualenvs
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+**/*.pyc
+.pytest_cache/
+**/.pytest_cache/
+.ruff_cache/
+**/.ruff_cache/
 backend/dist/
 
-# Frontend (Node/Vite)
+# Frontend (Node / Vite)
 node_modules/
+**/node_modules/
 frontend/electronic-department/dist/
 frontend/electronic-department/dist-ssr/
 frontend/electronic-department/*.local

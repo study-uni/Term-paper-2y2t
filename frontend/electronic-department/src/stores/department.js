@@ -1,6 +1,5 @@
 import { defineStore } from "pinia";
-
-const STORAGE_KEY = "ed-department";
+import api from "../api";
 
 const gradeToEcts = (grade) => {
   if (grade >= 90) return "A";
@@ -19,79 +18,21 @@ const formatTeacherShortName = (teachers, teacherId) => {
   return `${parts[0]} ${parts[1][0]}.${parts[2] ? parts[2][0] + "." : ""}`;
 };
 
-function loadStoredDepartment() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
 export const useDepartmentStore = defineStore("department", {
-  state: () => {
-    const stored = loadStoredDepartment();
-    if (stored) return stored;
-    return {
-      info: {
-        name: "Кафедра програмної інженерії",
-        description:
-          "Кафедра здійснює підготовку бакалаврів та магістрів зі спеціальності «Програмна інженерія». Навчання включає сучасні технології веб-розробки, архітектури ПЗ та проєктування баз даних.",
-        head: "Прокопенко Андрій Васильович",
-        email: "software@university.edu.ua",
-        phone: "+38 (044) 000-00-00",
-      },
-      disciplines: [
-        {
-          id: 1,
-          name: "Веб-програмування",
-          description: "HTML, CSS, JavaScript, Vue.js",
-        },
-        {
-          id: 2,
-          name: "Архітектура ПЗ",
-          description: "Патерни проєктування, UML, SOLID",
-        },
-        { id: 3, name: "Бази даних", description: "SQL, нормалізація, ORM" },
-      ],
-      teachers: [
-        {
-          id: 1,
-          name: "Прокопенко Андрій Васильович",
-          position: "Професор",
-          disciplineIds: [1, 2],
-        },
-        {
-          id: 2,
-          name: "Рудий Іван Володимирович",
-          position: "Асистент",
-          disciplineIds: [2],
-        },
-        {
-          id: 3,
-          name: "Сидоренко Олена Миколаївна",
-          position: "Доцент",
-          disciplineIds: [3],
-        },
-      ],
-      groups: [
-        { id: 1, name: "Б-121-24-3" },
-        { id: 2, name: "Б-121-24-4" },
-      ],
-      students: [
-        { id: 1, name: "Рудий Іван Володимирович", groupId: 1 },
-        { id: 2, name: "Коваленко Олег Петрович", groupId: 1 },
-        { id: 3, name: "Сидоров Дмитро Сергійович", groupId: 2 },
-      ],
-      grades: [
-        { id: 1, studentId: 1, disciplineId: 1, teacherId: 1, grade: 95 },
-        { id: 2, studentId: 1, disciplineId: 2, teacherId: 1, grade: 88 },
-        { id: 3, studentId: 1, disciplineId: 3, teacherId: 3, grade: 74 },
-        { id: 4, studentId: 2, disciplineId: 1, teacherId: 1, grade: 82 },
-        { id: 5, studentId: 3, disciplineId: 1, teacherId: 1, grade: 61 },
-      ],
-    };
-  },
+  state: () => ({
+    info: {
+      name: "",
+      description: "",
+      head: "",
+      email: "",
+      phone: "",
+    },
+    disciplines: [],
+    teachers: [],
+    groups: [],
+    students: [],
+    grades: [],
+  }),
 
   getters: {
     disciplineById: (state) => (id) =>
@@ -115,13 +56,13 @@ export const useDepartmentStore = defineStore("department", {
     studentGrades(state) {
       return (studentId) =>
         state.grades
-          .filter((g) => g.studentId === Number(studentId))
+          .filter((g) => g.student_id === Number(studentId))
           .map((g) => ({
             ...g,
             discipline:
-              state.disciplines.find((d) => d.id === g.disciplineId)?.name ??
+              state.disciplines.find((d) => d.id === g.discipline_id)?.name ??
               "—",
-            teacher: formatTeacherShortName(state.teachers, g.teacherId),
+            teacher: formatTeacherShortName(state.teachers, g.teacher_id),
             ECTS: gradeToEcts(g.grade),
           }));
     },
@@ -133,15 +74,15 @@ export const useDepartmentStore = defineStore("department", {
         return state.grades
           .filter(
             (g) =>
-              g.teacherId === Number(teacherId) &&
-              teacher.disciplineIds.includes(g.disciplineId),
+              g.teacher_id === Number(teacherId) &&
+              teacher.disciplineIds.includes(g.discipline_id),
           )
           .map((g) => ({
             ...g,
             student:
-              state.students.find((s) => s.id === g.studentId)?.name ?? "—",
+              state.students.find((s) => s.id === g.student_id)?.name ?? "—",
             subject:
-              state.disciplines.find((d) => d.id === g.disciplineId)?.name ??
+              state.disciplines.find((d) => d.id === g.discipline_id)?.name ??
               "—",
           }));
       };
@@ -149,143 +90,200 @@ export const useDepartmentStore = defineStore("department", {
   },
 
   actions: {
-    persist() {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          info: this.info,
-          disciplines: this.disciplines,
-          teachers: this.teachers,
-          groups: this.groups,
-          students: this.students,
-          grades: this.grades,
-        }),
-      );
+    // --- Public API Inits ---
+    async initPublic() {
+      try {
+        await Promise.all([
+          this.fetchInfo(),
+          this.fetchTeachers(),
+          this.fetchDisciplines(),
+        ]);
+      } catch (e) {
+        console.error("Error initializing public department data:", e);
+      }
     },
 
-    formatTeacherShort(teacherId) {
-      const t = this.teacherById(teacherId);
-      if (!t) return "—";
-      const parts = t.name.split(" ");
-      if (parts.length < 2) return t.name;
-      return `${parts[0]} ${parts[1][0]}.${parts[2] ? parts[2][0] + "." : ""}`;
+    async initPrivate(role, profileId = null) {
+      try {
+        await Promise.all([this.fetchGroups(), this.fetchStudents()]);
+        if (role === "student") {
+          await this.fetchGradesForStudent();
+        } else if (role === "teacher") {
+          await this.fetchGradesForTeacher();
+        }
+      } catch (e) {
+        console.error("Error initializing private department data:", e);
+      }
     },
 
-    addGroup(name) {
-      this.groups.push({ id: Date.now(), name });
-      this.persist();
+    // --- Department Info ---
+    async fetchInfo() {
+      const response = await api.get("/department/info");
+      this.info = response.data;
     },
-    addStudent(name, groupId) {
-      this.students.push({ id: Date.now(), name, groupId: Number(groupId) });
-      this.persist();
+
+    async updateInfo(name, description) {
+      const response = await api.put("/department/info", { name, description });
+      this.info = response.data;
     },
-    addTeacher(name, position, disciplineIds = []) {
-      this.teachers.push({
-        id: Date.now(),
+
+    async persist() {
+      // In the legacy code, this saved changes to localStorage.
+      // Now, since the admin editing is tied to changes, we persist it directly.
+      if (this.info && this.info.name) {
+        try {
+          await api.put("/department/info", {
+            name: this.info.name,
+            description: this.info.description,
+          });
+        } catch (e) {
+          console.error("Failed to persist department info:", e);
+        }
+      }
+    },
+
+    // --- Groups ---
+    async fetchGroups() {
+      const response = await api.get("/groups");
+      this.groups = response.data;
+    },
+
+    async addGroup(name) {
+      await api.post("/groups", { name });
+      await this.fetchGroups();
+    },
+
+    async updateGroup(id, name) {
+      await api.put(`/groups/${id}`, { name });
+      await this.fetchGroups();
+    },
+
+    async removeGroup(id) {
+      await api.delete(`/groups/${id}`);
+      await this.fetchGroups();
+    },
+
+    // --- Students ---
+    async fetchStudents() {
+      const response = await api.get("/students");
+      this.students = response.data;
+    },
+
+    async addStudent(name, groupId) {
+      await api.post("/students", { name, group_id: Number(groupId) });
+      await Promise.all([this.fetchStudents(), this.fetchGroups()]);
+    },
+
+    async updateStudent(id, data) {
+      await api.put(`/students/${id}`, {
+        name: data.name,
+        group_id: Number(data.groupId),
+      });
+      await Promise.all([this.fetchStudents(), this.fetchGroups()]);
+    },
+
+    async removeStudent(id) {
+      await api.delete(`/students/${id}`);
+      await Promise.all([this.fetchStudents(), this.fetchGroups()]);
+    },
+
+    // --- Teachers ---
+    async fetchTeachers() {
+      const response = await api.get("/teachers");
+      this.teachers = response.data;
+    },
+
+    async addTeacher(name, position, disciplineIds = []) {
+      await api.post("/teachers", {
         name,
         position,
-        disciplineIds: disciplineIds.map(Number),
+        discipline_ids: disciplineIds.map(Number),
       });
-      this.persist();
-    },
-    addDiscipline(name, description = "") {
-      this.disciplines.push({ id: Date.now(), name, description });
-      this.persist();
+      await this.fetchTeachers();
     },
 
-    updateGroup(id, name) {
-      const item = this.groups.find((g) => g.id === Number(id));
-      if (item) {
-        item.name = name;
-        this.persist();
-      }
-    },
-    updateStudent(id, data) {
-      const item = this.students.find((s) => s.id === Number(id));
-      if (item) {
-        Object.assign(item, {
-          name: data.name,
-          groupId: Number(data.groupId),
-        });
-        this.persist();
-      }
-    },
-    updateTeacher(id, data) {
-      const item = this.teachers.find((t) => t.id === Number(id));
-      if (item) {
-        Object.assign(item, {
-          name: data.name,
-          position: data.position,
-          disciplineIds: data.disciplineIds.map(Number),
-        });
-        this.persist();
-      }
-    },
-    updateDiscipline(id, data) {
-      const item = this.disciplines.find((d) => d.id === Number(id));
-      if (item) {
-        Object.assign(item, {
-          name: data.name,
-          description: data.description,
-        });
-        this.persist();
-      }
-    },
-
-    removeGroup(id) {
-      this.groups = this.groups.filter((g) => g.id !== Number(id));
-      this.persist();
-    },
-    removeStudent(id) {
-      const targetId = Number(id);
-      this.students = this.students.filter((s) => s.id !== targetId);
-      this.grades = this.grades.filter((g) => g.studentId !== targetId);
-      this.persist();
-    },
-    removeTeacher(id) {
-      const targetId = Number(id);
-      this.teachers = this.teachers.filter((t) => t.id !== targetId);
-      this.grades = this.grades.filter((g) => g.teacherId !== targetId);
-      this.persist();
-    },
-    removeDiscipline(id) {
-      const targetId = Number(id);
-      this.disciplines = this.disciplines.filter((d) => d.id !== targetId);
-      this.teachers.forEach((t) => {
-        t.disciplineIds = t.disciplineIds.filter((did) => did !== targetId);
+    async updateTeacher(id, data) {
+      await api.put(`/teachers/${id}`, {
+        name: data.name,
+        position: data.position,
+        discipline_ids: data.disciplineIds.map(Number),
       });
-      this.grades = this.grades.filter((g) => g.disciplineId !== targetId);
-      this.persist();
+      await this.fetchTeachers();
     },
 
-    updateGrade(gradeId, value) {
+    async removeTeacher(id) {
+      await api.delete(`/teachers/${id}`);
+      await this.fetchTeachers();
+    },
+
+    // --- Disciplines ---
+    async fetchDisciplines() {
+      const response = await api.get("/disciplines");
+      this.disciplines = response.data;
+    },
+
+    async addDiscipline(name, description = "") {
+      await api.post("/disciplines", { name, description });
+      await this.fetchDisciplines();
+    },
+
+    async updateDiscipline(id, data) {
+      await api.put(`/disciplines/${id}`, {
+        name: data.name,
+        description: data.description,
+      });
+      await this.fetchDisciplines();
+    },
+
+    async removeDiscipline(id) {
+      await api.delete(`/disciplines/${id}`);
+      await this.fetchDisciplines();
+    },
+
+    // --- Grades ---
+    async fetchGradesForStudent() {
+      const response = await api.get("/grades/my");
+      this.grades = response.data;
+    },
+
+    async fetchGradesForTeacher(disciplineId = null) {
+      const params = {};
+      if (disciplineId) params.discipline_id = disciplineId;
+      const response = await api.get("/grades/journal", { params });
+      this.grades = response.data;
+    },
+
+    async updateGrade(gradeId, value) {
+      const val = Math.min(100, Math.max(0, Number(value) || 0));
+      await api.put(`/grades/${gradeId}`, { grade: val });
+      // Update locally
       const item = this.grades.find((g) => g.id === Number(gradeId));
       if (item) {
-        item.grade = Math.min(100, Math.max(0, Number(value) || 0));
-        this.persist();
+        item.grade = val;
       }
     },
 
-    ensureGrade(studentId, disciplineId, teacherId) {
-      const sId = Number(studentId);
-      const dId = Number(disciplineId);
-      const tId = Number(teacherId);
+    async ensureGrade(studentId, disciplineId, teacherId) {
+      const response = await api.post("/grades/ensure", {
+        student_id: Number(studentId),
+        discipline_id: Number(disciplineId),
+        teacher_id: Number(teacherId),
+      });
+      const newGrade = response.data;
 
-      let item = this.grades.find(
-        (g) => g.studentId === sId && g.disciplineId === dId,
-      );
-      if (!item) {
-        item = {
-          id: Date.now(),
-          studentId: sId,
-          disciplineId: dId,
-          teacherId: tId,
-          grade: 0,
-        };
-        this.grades.push(item);
-        this.persist();
+      const idx = this.grades.findIndex((g) => g.id === newGrade.id);
+      if (idx >= 0) {
+        this.grades[idx] = newGrade;
+      } else {
+        this.grades.push(newGrade);
       }
-      return item;
+      return newGrade;
+    },
+
+    clearPrivate() {
+      this.groups = [];
+      this.students = [];
+      this.grades = [];
     },
   },
 });
