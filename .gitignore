@@ -32,3 +32,7 @@ frontend/electronic-department/yarn-debug.log*
 frontend/electronic-department/yarn-error.log*
 frontend/electronic-department/pnpm-debug.log*
 frontend/electronic-department/lerna-debug.log*
+
+# Database files
+*.db
+*.sqlite3
