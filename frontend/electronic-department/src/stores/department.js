@@ -1,6 +1,16 @@
 import { defineStore } from "pinia";
 import api from "../api";
 
+const normalizeStudent = (student) => ({
+  ...student,
+  groupId: student.group_id ?? student.groupId,
+});
+
+const normalizeTeacher = (teacher) => ({
+  ...teacher,
+  disciplineIds: teacher.discipline_ids ?? teacher.disciplineIds,
+});
+
 const gradeToEcts = (grade) => {
   if (grade >= 90) return "A";
   if (grade >= 80) return "B";
@@ -103,7 +113,7 @@ export const useDepartmentStore = defineStore("department", {
       }
     },
 
-    async initPrivate(role, profileId = null) {
+    async initPrivate(role) {
       try {
         await Promise.all([this.fetchGroups(), this.fetchStudents()]);
         if (role === "student") {
@@ -166,7 +176,7 @@ export const useDepartmentStore = defineStore("department", {
     // --- Students ---
     async fetchStudents() {
       const response = await api.get("/students");
-      this.students = response.data;
+      this.students = response.data.map(normalizeStudent);
     },
 
     async addStudent(name, groupId) {
@@ -190,7 +200,7 @@ export const useDepartmentStore = defineStore("department", {
     // --- Teachers ---
     async fetchTeachers() {
       const response = await api.get("/teachers");
-      this.teachers = response.data;
+      this.teachers = response.data.map(normalizeTeacher);
     },
 
     async addTeacher(name, position, disciplineIds = []) {

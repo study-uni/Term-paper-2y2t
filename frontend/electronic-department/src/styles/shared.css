@@ -9,45 +9,59 @@
 body {
   margin: 0;
   padding: 0;
+  background: #f1f5f9;
 }
 
 .page-container {
-  max-width: 900px;
+  width: 100%;
+  max-width: none;
+  padding: 0;
 }
 
 .page-container h2 {
-  color: #1e293b;
+  color: #0f172a;
   margin-bottom: 8px;
   display: flex;
   align-items: center;
   gap: 10px;
+  font-size: 1.5rem;
 }
 
 .page-container p {
   color: #64748b;
   margin-bottom: 20px;
+  line-height: 1.5;
 }
 
 .toolbar {
   display: flex;
   gap: 15px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .custom-input {
   flex: 1;
   padding: 10px;
   border: 1px solid #cbd5e1;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.custom-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .custom-select {
   padding: 10px;
   border: 1px solid #cbd5e1;
-  border-radius: 6px;
+  border-radius: 8px;
   background: white;
   font-size: 1rem;
+  transition: border-color 0.2s ease;
 }
 
 .custom-table {
@@ -55,6 +69,9 @@ body {
   border-collapse: collapse;
   margin-top: 10px;
   border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .custom-table th,
@@ -71,10 +88,29 @@ body {
 }
 
 .badge {
-  background: #64748b;
+  background: #475569;
   color: white;
-  padding: 3px 8px;
+  padding: 4px 10px;
   border-radius: 12px;
   font-size: 0.8rem;
-  font-weight: bold;
+  font-weight: 600;
+}
+
+.p-datatable {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+  transition: box-shadow 0.2s ease;
+}
+
+.p-datatable:hover {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+}
+
+.p-button {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.p-button:hover:not(:disabled) {
+  transform: translateY(-1px);
 }

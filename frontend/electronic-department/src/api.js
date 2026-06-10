@@ -1,7 +1,10 @@
 import axios from "axios";
 
+const primaryBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8001/api";
+const fallbackBaseUrl = import.meta.env.VITE_API_FALLBACK_URL || "http://localhost:8000/api";
+
 const api = axios.create({
-  baseURL: "http://localhost:8001/api",
+  baseURL: primaryBaseUrl,
   headers: {
     "Content-Type": "application/json",
   },
@@ -10,7 +13,6 @@ const api = axios.create({
 // Request interceptor to automatically attach JWT token
 api.interceptors.request.use(
   (config) => {
-    // We import auth store dynamically to avoid circular dependency
     const rawAuth = localStorage.getItem("ed-auth");
     if (rawAuth) {
       try {
@@ -24,23 +26,32 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  },
+  (error) => Promise.reject(error),
 );
 
-// Response interceptor to handle errors globally
+// Response interceptor to handle auth errors and fallback network issues
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const config = error.config;
+
+    if (config && !config.__retry && !error.response) {
+      config.__retry = true;
+      config.baseURL = fallbackBaseUrl;
+      console.warn(
+        `Primary API base URL failed, retrying with fallback ${fallbackBaseUrl}`,
+      );
+      return api.request(config);
+    }
+
     if (error.response && error.response.status === 401) {
       console.warn("Unauthorized access - clearing session");
       localStorage.removeItem("ed-auth");
-      // Force redirect to general page
       if (window.location.pathname !== "/") {
         window.location.href = "/";
       }
     }
+
     return Promise.reject(error);
   },
 );

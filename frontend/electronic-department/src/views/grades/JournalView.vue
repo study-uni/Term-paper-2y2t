@@ -6,6 +6,7 @@ import { useListControls } from "../../composables/useListControls";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import InputText from "primevue/inputtext";
+import InputNumber from "primevue/inputnumber";
 import Select from "primevue/select";
 
 const department = useDepartmentStore();
@@ -113,14 +114,15 @@ const updateGrade = async (row) => {
         <Column field="subject" header="Дисципліна" sortable></Column>
         <Column header="Оцінка (0–100)">
           <template #body="slotProps">
-            <InputText
-              type="number"
-              v-model.number="slotProps.data.grade"
-              @change="updateGrade(slotProps.data)"
-              min="0"
-              max="100"
-              class="grade-input font-bold text-center"
-              style="width: 80px"
+            <InputNumber
+              v-model="slotProps.data.grade"
+              :min="0"
+              :max="100"
+              :useGrouping="false"
+              inputClass="font-bold text-center"
+              class="grade-input"
+              style="width: 90px"
+              @blur="updateGrade(slotProps.data)"
             />
           </template>
         </Column>

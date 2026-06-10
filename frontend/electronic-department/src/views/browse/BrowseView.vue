@@ -81,7 +81,7 @@ const tabs = [
 </script>
 
 <template>
-  <div class="page-container page-wide">
+  <div class="page-container">
     <h2><i class="pi pi-list"></i> Підсистема виводу</h2>
     <p>Перегляд структури кафедри з пошуком, фільтрами та сортуванням.</p>
 
@@ -207,12 +207,4 @@ const tabs = [
   </div>
 </template>
 
-<style scoped>
-.page-wide {
-  max-width: 1000px;
-}
-.empty-row {
-  text-align: center;
-  color: #94a3b8;
-}
-</style>
+<style scoped></style>

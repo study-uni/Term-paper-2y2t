@@ -1,25 +1,35 @@
 <script setup>
-import { onMounted } from "vue";
+import { computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "./stores/auth";
 import { useDepartmentStore } from "./stores/department";
-import { useRouter } from "vue-router";
+import Select from "primevue/select";
 import Button from "primevue/button";
+import Menu from "primevue/menu";
 
 const authStore = useAuthStore();
 const departmentStore = useDepartmentStore();
 const router = useRouter();
+const route = useRoute();
+
+const roleOptions = [
+  { label: "Незареєстрований", value: "guest" },
+  { label: "Адміністратор", value: "admin" },
+  { label: "Менеджер", value: "manager" },
+  { label: "Викладач", value: "teacher" },
+  { label: "Студент", value: "student" },
+];
 
 onMounted(async () => {
-  // Load public resources (info, teachers, disciplines)
   await departmentStore.initPublic();
 
-  // If simulated role is active, load private resources (groups, students, grades)
   if (authStore.role !== "guest") {
     await departmentStore.initPrivate(authStore.role, authStore.profileId);
   }
 });
 
 const changeRole = async (roleName) => {
+  if (!roleName) return;
   try {
     await authStore.login(roleName);
     await departmentStore.initPrivate(authStore.role, authStore.profileId);
@@ -41,6 +51,55 @@ const handleLogout = () => {
   departmentStore.clearPrivate();
   router.push("/");
 };
+
+const menuItems = computed(() => {
+  const items = [
+    {
+      label: "Загальна інформація",
+      icon: "pi pi-home",
+      class: route.path === "/" ? "menu-item-active" : "",
+      command: () => router.push("/"),
+    },
+  ];
+
+  if (["admin", "manager", "teacher", "student"].includes(authStore.role)) {
+    items.push({
+      label: "Вивід даних (Підсистема 2)",
+      icon: "pi pi-list",
+      class: route.path === "/browse" ? "menu-item-active" : "",
+      command: () => router.push("/browse"),
+    });
+  }
+
+  if (authStore.canManage) {
+    items.push({
+      label: "Управління (Підсистема 1)",
+      icon: "pi pi-sliders-h",
+      class: route.path === "/management" ? "menu-item-active" : "",
+      command: () => router.push("/management"),
+    });
+  }
+
+  if (authStore.isTeacher) {
+    items.push({
+      label: "Журнал оцінок (Підсистема 3)",
+      icon: "pi pi-book",
+      class: route.path === "/journal" ? "menu-item-active" : "",
+      command: () => router.push("/journal"),
+    });
+  }
+
+  if (authStore.isStudent) {
+    items.push({
+      label: "Мої оцінки (Підсистема 3)",
+      icon: "pi pi-user",
+      class: route.path === "/my-grades" ? "menu-item-active" : "",
+      command: () => router.push("/my-grades"),
+    });
+  }
+
+  return items;
+});
 </script>
 
 <template>
@@ -53,39 +112,18 @@ const handleLogout = () => {
 
       <div class="role-simulator">
         <span class="status-text">Тестувати роль:</span>
-        <Button
-          @click="changeRole('guest')"
-          :severity="authStore.role === 'guest' ? 'primary' : 'secondary'"
-          size="small"
-          label="Незареєстрований"
+        <Select
+          :modelValue="authStore.role"
+          :options="roleOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Оберіть роль"
+          class="role-select"
+          @update:modelValue="changeRole"
         />
-        <Button
-          @click="changeRole('admin')"
-          :severity="authStore.role === 'admin' ? 'primary' : 'secondary'"
-          size="small"
-          label="Адміністратор"
-        />
-        <Button
-          @click="changeRole('manager')"
-          :severity="authStore.role === 'manager' ? 'primary' : 'secondary'"
-          size="small"
-          label="Менеджер"
-        />
-        <Button
-          @click="changeRole('teacher')"
-          :severity="authStore.role === 'teacher' ? 'primary' : 'secondary'"
-          size="small"
-          label="Викладач"
-        />
-        <Button
-          @click="changeRole('student')"
-          :severity="authStore.role === 'student' ? 'primary' : 'secondary'"
-          size="small"
-          label="Студент"
-        />
-        <span v-if="authStore.user" class="user-badge"
-          >{{ authStore.roleLabel }}: {{ authStore.user.name }}</span
-        >
+        <span v-if="authStore.user" class="user-badge">
+          {{ authStore.roleLabel }}: {{ authStore.user.name }}
+        </span>
         <Button
           v-if="authStore.role !== 'guest'"
           @click="handleLogout"
@@ -99,39 +137,7 @@ const handleLogout = () => {
 
     <div class="main-content">
       <aside class="sidebar">
-        <router-link to="/" class="nav-item">
-          <i class="pi pi-home"></i> Загальна інформація
-        </router-link>
-
-        <router-link
-          v-if="
-            ['admin', 'manager', 'teacher', 'student'].includes(authStore.role)
-          "
-          to="/browse"
-          class="nav-item"
-        >
-          <i class="pi pi-list"></i> Вивід даних (Підсистема 2)
-        </router-link>
-
-        <router-link
-          v-if="authStore.canManage"
-          to="/management"
-          class="nav-item"
-        >
-          <i class="pi pi-sliders-h"></i> Управління (Підсистема 1)
-        </router-link>
-
-        <router-link v-if="authStore.isTeacher" to="/journal" class="nav-item">
-          <i class="pi pi-book"></i> Журнал оцінок (Підсистема 3)
-        </router-link>
-
-        <router-link
-          v-if="authStore.isStudent"
-          to="/my-grades"
-          class="nav-item"
-        >
-          <i class="pi pi-user"></i> Мої оцінки (Підсистема 3)
-        </router-link>
+        <Menu :model="menuItems" class="sidebar-menu w-full" />
       </aside>
 
       <main class="content-body">
@@ -147,14 +153,17 @@ const handleLogout = () => {
   flex-direction: column;
   height: 100vh;
 }
+
 .app-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #1e293b;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   color: white;
-  padding: 15px 25px;
+  padding: 14px 24px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
 }
+
 .logo {
   display: flex;
   align-items: center;
@@ -162,19 +171,28 @@ const handleLogout = () => {
   font-size: 1.3rem;
   font-weight: bold;
 }
+
 .role-simulator {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
+
+.role-select {
+  min-width: 200px;
+}
+
 .status-text {
   font-size: 0.9rem;
   color: #94a3b8;
+  white-space: nowrap;
 }
+
 .user-badge {
   font-size: 0.85rem;
-  color: #94a3b8;
-  margin-left: 8px;
+  color: #cbd5e1;
   max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -186,36 +204,54 @@ const handleLogout = () => {
   flex: 1;
   overflow: hidden;
 }
+
 .sidebar {
-  width: 260px;
+  width: 280px;
   background: #f8fafc;
   border-right: 1px solid #e2e8f0;
-  padding: 20px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  padding: 16px 8px;
+  overflow-y: auto;
 }
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px;
-  color: #334155;
-  text-decoration: none;
-  border-radius: 6px;
-  font-weight: 500;
+
+.sidebar-menu {
+  border: none;
+  background: transparent;
 }
-.nav-item:hover {
-  background: #f1f5f9;
-}
-.nav-item.router-link-active {
+
+.sidebar-menu .menu-item-active .p-menu-item-content {
   background: #e0f2fe;
   color: #0369a1;
 }
+
 .content-body {
   flex: 1;
-  padding: 30px;
+  padding: 24px 32px;
   overflow-y: auto;
-  background: #ffffff;
+  background: #f1f5f9;
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .role-simulator {
+    width: 100%;
+  }
+
+  .role-select {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .sidebar {
+    width: 220px;
+  }
+
+  .content-body {
+    padding: 16px;
+  }
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useDepartmentStore } from "../../stores/department";
 import { useListControls } from "../../composables/useListControls";
@@ -10,6 +10,20 @@ import Select from "primevue/select";
 
 const department = useDepartmentStore();
 const { info, teachers, disciplines } = storeToRefs(department);
+const loadingInfo = ref(true);
+const infoError = ref(null);
+
+onMounted(async () => {
+  if (!info.value.name) {
+    try {
+      await department.fetchInfo();
+    } catch (err) {
+      infoError.value = "Не вдалося завантажити інформацію про кафедру.";
+      console.error("Failed to fetch department info:", err);
+    }
+  }
+  loadingInfo.value = false;
+});
 
 const teachersForDisplay = computed(() =>
   teachers.value.map((t) => ({
@@ -42,11 +56,21 @@ const positionOptions = [
 </script>
 
 <template>
-  <div class="page-container page-wide">
+  <div class="page-container">
     <h2><i class="pi pi-info-circle"></i> Про кафедру</h2>
     <p>Загальна інформація для незареєстрованих та всіх відвідувачів.</p>
 
-    <section class="info-card">
+    <section v-if="loadingInfo" class="info-card">
+      <h3>Завантаження...</h3>
+      <p class="info-desc">Будь ласка, зачекайте, інформація завантажується.</p>
+    </section>
+
+    <section v-else-if="infoError" class="info-card">
+      <h3>Помилка</h3>
+      <p class="info-desc">{{ infoError }}</p>
+    </section>
+
+    <section v-else class="info-card">
       <h3>{{ info.name }}</h3>
       <p class="info-desc">{{ info.description }}</p>
       <div class="info-meta">
@@ -119,9 +143,6 @@ const positionOptions = [
 </template>
 
 <style scoped>
-.page-wide {
-  max-width: 1000px;
-}
 .info-card {
   background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
   border: 1px solid #bfdbfe;
@@ -158,9 +179,5 @@ const positionOptions = [
   display: flex;
   align-items: center;
   gap: 8px;
-}
-.empty-row {
-  text-align: center;
-  color: #94a3b8;
 }
 </style>
