@@ -6,6 +6,7 @@ import { useListControls } from "../../composables/useListControls";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import InputText from "primevue/inputtext";
+import InputNumber from "primevue/inputnumber";
 import Select from "primevue/select";
 
 const department = useDepartmentStore();
@@ -43,7 +44,9 @@ const journalRows = computed(() => {
   if (!teacherId.value) return [];
   let rows = department.journalForTeacher(teacherId.value);
   if (selectedDisciplineId.value != null) {
-    rows = rows.filter((r) => r.disciplineId === selectedDisciplineId.value);
+    rows = rows.filter(
+      (r) => r.discipline_id === selectedDisciplineId.value,
+    );
   }
   return rows;
 });
@@ -113,17 +116,19 @@ const updateGrade = async (row) => {
         <Column field="subject" header="Дисципліна" sortable></Column>
         <Column header="Оцінка (0–100)">
           <template #body="slotProps">
-            <InputText
-              type="number"
-              v-model.number="slotProps.data.grade"
-              @change="updateGrade(slotProps.data)"
-              min="0"
-              max="100"
-              class="grade-input font-bold text-center"
-              style="width: 80px"
+            <InputNumber
+              v-model="slotProps.data.grade"
+              :min="0"
+              :max="100"
+              :useGrouping="false"
+              inputClass="grade-input"
+              @blur="updateGrade(slotProps.data)"
             />
           </template>
         </Column>
+        <template #empty>
+          <div class="empty-message">Записів не знайдено.</div>
+        </template>
       </DataTable>
     </template>
   </div>

@@ -18,7 +18,8 @@ const studentsDisplay = computed(() =>
   students.value.map((s) => ({
     id: s.id,
     name: s.name,
-    group: department.groupById(s.groupId)?.name ?? "—",
+    group:
+      s.groupName ?? department.groupById(s.groupId)?.name ?? "—",
     groupId: s.groupId,
   })),
 );
@@ -123,6 +124,9 @@ const tabs = [
             <span class="badge">{{ slotProps.data.group }}</span>
           </template>
         </Column>
+        <template #empty>
+          <div class="empty-message">Студентів не знайдено.</div>
+        </template>
       </DataTable>
     </template>
 
@@ -150,6 +154,9 @@ const tabs = [
         <Column field="name" header="ПІБ" sortable></Column>
         <Column field="position" header="Посада" sortable></Column>
         <Column field="disciplines" header="Дисципліни"></Column>
+        <template #empty>
+          <div class="empty-message">Викладачів не знайдено.</div>
+        </template>
       </DataTable>
     </template>
 
@@ -175,9 +182,15 @@ const tabs = [
         ></Column>
         <Column header="Кількість студентів">
           <template #body="slotProps">
-            {{ students.filter((s) => s.groupId === slotProps.data.id).length }}
+            {{
+              slotProps.data.student_count ??
+              students.filter((s) => s.groupId === slotProps.data.id).length
+            }}
           </template>
         </Column>
+        <template #empty>
+          <div class="empty-message">Груп не знайдено.</div>
+        </template>
       </DataTable>
     </template>
 
@@ -202,6 +215,9 @@ const tabs = [
           style="font-weight: bold"
         ></Column>
         <Column field="description" header="Опис"></Column>
+        <template #empty>
+          <div class="empty-message">Дисциплін не знайдено.</div>
+        </template>
       </DataTable>
     </template>
   </div>
@@ -209,7 +225,7 @@ const tabs = [
 
 <style scoped>
 .page-wide {
-  max-width: 1000px;
+  max-width: 1200px;
 }
 .empty-row {
   text-align: center;

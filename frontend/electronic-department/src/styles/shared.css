@@ -11,8 +11,10 @@ body {
   padding: 0;
 }
 
+/* Layout */
 .page-container {
-  max-width: 900px;
+  width: 100%;
+  max-width: 1200px;
 }
 
 .page-container h2 {
@@ -32,6 +34,143 @@ body {
   display: flex;
   gap: 15px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Flex utilities (Tailwind-like, used across views) */
+.flex {
+  display: flex;
+}
+.flex-col {
+  flex-direction: column;
+}
+.flex-1 {
+  flex: 1;
+  min-width: 0;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.items-center {
+  align-items: center;
+}
+.justify-end {
+  justify-content: flex-end;
+}
+.self-start {
+  align-self: flex-start;
+}
+.gap-1 {
+  gap: 0.25rem;
+}
+.gap-2 {
+  gap: 0.5rem;
+}
+.gap-3 {
+  gap: 0.75rem;
+}
+.gap-4 {
+  gap: 1rem;
+}
+
+/* Spacing */
+.mt-2 {
+  margin-top: 0.5rem;
+}
+.mb-4 {
+  margin-bottom: 1rem;
+}
+.my-4 {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+.p-4 {
+  padding: 1rem;
+}
+
+/* Sizing */
+.w-full {
+  width: 100%;
+}
+.w-64 {
+  width: 16rem;
+  min-width: 12rem;
+}
+.w-80 {
+  width: 20rem;
+  min-width: 14rem;
+}
+
+/* Typography */
+.text-sm {
+  font-size: 0.875rem;
+}
+.text-xs {
+  font-size: 0.75rem;
+}
+.font-medium {
+  font-weight: 500;
+}
+.font-bold {
+  font-weight: 700;
+}
+.text-slate-600 {
+  color: #475569;
+}
+.text-amber-900 {
+  color: #78350f;
+}
+.select-none {
+  user-select: none;
+}
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Surfaces */
+.bg-slate-50 {
+  background-color: #f8fafc;
+}
+.border {
+  border-width: 1px;
+  border-style: solid;
+}
+.border-slate-200 {
+  border-color: #e2e8f0;
+}
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+
+/* Forms */
+.form-panel {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.form-panel-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .custom-input {
@@ -77,4 +216,37 @@ body {
   border-radius: 12px;
   font-size: 0.8rem;
   font-weight: bold;
+  display: inline-block;
+}
+
+.empty-message {
+  text-align: center;
+  color: #94a3b8;
+  padding: 24px;
+}
+
+.grade-input {
+  width: 80px;
+  text-align: center;
+  font-weight: bold;
+}
+
+/* PrimeVue tweaks */
+.p-datatable .p-datatable-tbody > tr > td {
+  vertical-align: middle;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  white-space: nowrap;
+}
+
+button,
+.p-button,
+.nav-item,
+input,
+.p-inputtext,
+.p-select,
+.p-datatable td,
+.user-badge {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
 }

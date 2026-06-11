@@ -1,19 +1,28 @@
 <script setup>
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import { useAuthStore } from "./stores/auth";
 import { useDepartmentStore } from "./stores/department";
 import { useRouter } from "vue-router";
 import Button from "primevue/button";
+import Select from "primevue/select";
 
 const authStore = useAuthStore();
 const departmentStore = useDepartmentStore();
 const router = useRouter();
 
+const roleOptions = [
+  { label: "Незареєстрований", value: "guest" },
+  { label: "Адміністратор", value: "admin" },
+  { label: "Менеджер", value: "manager" },
+  { label: "Викладач", value: "teacher" },
+  { label: "Студент", value: "student" },
+];
+
+const selectedRole = ref(authStore.role);
+
 onMounted(async () => {
-  // Load public resources (info, teachers, disciplines)
   await departmentStore.initPublic();
 
-  // If simulated role is active, load private resources (groups, students, grades)
   if (authStore.role !== "guest") {
     await departmentStore.initPrivate(authStore.role, authStore.profileId);
   }
@@ -22,7 +31,14 @@ onMounted(async () => {
 const changeRole = async (roleName) => {
   try {
     await authStore.login(roleName);
-    await departmentStore.initPrivate(authStore.role, authStore.profileId);
+    selectedRole.value = roleName;
+
+    if (roleName === "guest") {
+      departmentStore.clearPrivate();
+    } else {
+      await departmentStore.initPrivate(authStore.role, authStore.profileId);
+    }
+
     const defaultRoutes = {
       teacher: "/journal",
       student: "/my-grades",
@@ -33,11 +49,19 @@ const changeRole = async (roleName) => {
     router.push(defaultRoutes[roleName] ?? "/");
   } catch (e) {
     console.error("Failed to login simulated role:", e);
+    selectedRole.value = authStore.role;
+  }
+};
+
+const onRoleSelect = (roleName) => {
+  if (roleName && roleName !== authStore.role) {
+    changeRole(roleName);
   }
 };
 
 const handleLogout = () => {
   authStore.logout();
+  selectedRole.value = "guest";
   departmentStore.clearPrivate();
   router.push("/");
 };
@@ -53,39 +77,17 @@ const handleLogout = () => {
 
       <div class="role-simulator">
         <span class="status-text">Тестувати роль:</span>
-        <Button
-          @click="changeRole('guest')"
-          :severity="authStore.role === 'guest' ? 'primary' : 'secondary'"
-          size="small"
-          label="Незареєстрований"
+        <Select
+          v-model="selectedRole"
+          :options="roleOptions"
+          optionLabel="label"
+          optionValue="value"
+          class="role-select"
+          @update:model-value="onRoleSelect"
         />
-        <Button
-          @click="changeRole('admin')"
-          :severity="authStore.role === 'admin' ? 'primary' : 'secondary'"
-          size="small"
-          label="Адміністратор"
-        />
-        <Button
-          @click="changeRole('manager')"
-          :severity="authStore.role === 'manager' ? 'primary' : 'secondary'"
-          size="small"
-          label="Менеджер"
-        />
-        <Button
-          @click="changeRole('teacher')"
-          :severity="authStore.role === 'teacher' ? 'primary' : 'secondary'"
-          size="small"
-          label="Викладач"
-        />
-        <Button
-          @click="changeRole('student')"
-          :severity="authStore.role === 'student' ? 'primary' : 'secondary'"
-          size="small"
-          label="Студент"
-        />
-        <span v-if="authStore.user" class="user-badge"
-          >{{ authStore.roleLabel }}: {{ authStore.user.name }}</span
-        >
+        <span v-if="authStore.user" class="user-badge">
+          {{ authStore.roleLabel }}: {{ authStore.user.name }}
+        </span>
         <Button
           v-if="authStore.role !== 'guest'"
           @click="handleLogout"
@@ -151,6 +153,8 @@ const handleLogout = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
   background: #1e293b;
   color: white;
   padding: 15px 25px;
@@ -166,6 +170,11 @@ const handleLogout = () => {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.role-select {
+  min-width: 200px;
 }
 .status-text {
   font-size: 0.9rem;
@@ -175,7 +184,8 @@ const handleLogout = () => {
   font-size: 0.85rem;
   color: #94a3b8;
   margin-left: 8px;
-  max-width: 220px;
+  width: 220px;
+  display: inline-block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

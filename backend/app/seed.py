@@ -1,12 +1,37 @@
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.auth import get_password_hash
 from app.models import DepartmentInfo, Discipline, Grade, Group, Student, Teacher, User
 
 
+def sync_sequences(db: Session):
+    if db.bind.dialect.name == "postgresql":
+        tables = [
+            "department_info",
+            "disciplines",
+            "groups",
+            "teachers",
+            "students",
+            "grades",
+            "users",
+        ]
+        for table in tables:
+            try:
+                db.execute(
+                    text(
+                        f"SELECT setval(pg_get_serial_sequence('{table}', 'id'), COALESCE(max(id), 1)) FROM {table}"
+                    )
+                )
+            except Exception as e:
+                print(f"Failed to reset sequence for table {table}: {e}")
+        db.commit()
+
+
 def seed_db(db: Session):
     if db.query(User).first() is not None:
-        print("Database already seeded.")
+        print("Database already seeded. Syncing sequences...")
+        sync_sequences(db)
         return
 
     print("Seeding database with default academic data...")
@@ -120,3 +145,5 @@ def seed_db(db: Session):
     db.add_all(users)
     db.commit()
     print("Database seeding completed successfully.")
+    sync_sequences(db)
+

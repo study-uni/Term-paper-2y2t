@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch, nextTick } from "vue";
 import { storeToRefs } from "pinia";
 import { useDepartmentStore } from "../../stores/department";
 import { useAuthStore } from "../../stores/auth";
@@ -8,6 +8,7 @@ import Column from "primevue/column";
 import InputText from "primevue/inputtext";
 import Select from "primevue/select";
 import Button from "primevue/button";
+import Checkbox from "primevue/checkbox";
 import Textarea from "primevue/textarea";
 
 const department = useDepartmentStore();
@@ -23,15 +24,40 @@ const newStudent = ref({ name: "", groupId: null });
 const newTeacher = ref({ name: "", position: "Асистент", disciplineIds: [] });
 const newDiscipline = ref({ name: "", description: "" });
 
-// Initialize groupId when groups load
-if (groups.value.length > 0) {
-  newStudent.value.groupId = groups.value[0].id;
-}
+const groupError = ref("");
+const studentError = ref("");
+const teacherError = ref("");
+const disciplineError = ref("");
+
+watch(
+  groups,
+  async (newGroups) => {
+    if (newGroups.length > 0 && newStudent.value.groupId === null) {
+      await nextTick();
+      newStudent.value.groupId = newGroups[0].id;
+    }
+  },
+  { immediate: true },
+);
 
 const canEditDepartmentInfo = computed(() => auth.role === "admin");
 
 const startEdit = (type, item) => {
   editingId.value = `${type}-${item.id}`;
+  if (type === "teacher") {
+    editForm.value = {
+      ...item,
+      disciplineIds: [...(item.disciplineIds ?? item.discipline_ids ?? [])],
+    };
+    return;
+  }
+  if (type === "student") {
+    editForm.value = {
+      ...item,
+      groupId: item.groupId ?? item.group_id,
+    };
+    return;
+  }
   editForm.value = { ...item };
 };
 
@@ -70,50 +96,69 @@ const saveEdit = async (type) => {
 };
 
 const addGroup = async () => {
-  if (!newGroupName.value.trim()) return;
+  groupError.value = "";
+  const name = newGroupName.value.trim();
+  if (!name) return;
   try {
-    await department.addGroup(newGroupName.value.trim());
+    await department.addGroup(name);
     newGroupName.value = "";
   } catch (e) {
     console.error("Failed to add group:", e);
+    groupError.value = e.response?.data?.detail ?? "Не вдалося додати групу";
   }
 };
 
 const addStudent = async () => {
-  const gId = newStudent.value.groupId || groups.value[0]?.id;
-  if (!newStudent.value.name.trim() || !gId) return;
+  studentError.value = "";
+  const name = newStudent.value.name.trim();
+  const gId = newStudent.value.groupId;
+  if (!name) {
+    studentError.value = "Будь ласка, введіть ПІБ студента";
+    return;
+  }
+  if (!gId) {
+    studentError.value = "Будь ласка, оберіть групу";
+    return;
+  }
   try {
-    await department.addStudent(newStudent.value.name.trim(), gId);
+    await department.addStudent(name, gId);
     newStudent.value.name = "";
   } catch (e) {
     console.error("Failed to add student:", e);
+    studentError.value = e.response?.data?.detail ?? "Не вдалося додати студента";
   }
 };
 
 const addTeacher = async () => {
-  if (!newTeacher.value.name.trim()) return;
+  teacherError.value = "";
+  const name = newTeacher.value.name.trim();
+  if (!name) return;
   try {
     await department.addTeacher(
-      newTeacher.value.name.trim(),
+      name,
       newTeacher.value.position,
       [...newTeacher.value.disciplineIds],
     );
     newTeacher.value = { name: "", position: "Асистент", disciplineIds: [] };
   } catch (e) {
     console.error("Failed to add teacher:", e);
+    teacherError.value = e.response?.data?.detail ?? "Не вдалося додати викладача";
   }
 };
 
 const addDiscipline = async () => {
-  if (!newDiscipline.value.name.trim()) return;
+  disciplineError.value = "";
+  const name = newDiscipline.value.name.trim();
+  if (!name) return;
   try {
     await department.addDiscipline(
-      newDiscipline.value.name.trim(),
+      name,
       newDiscipline.value.description,
     );
     newDiscipline.value = { name: "", description: "" };
   } catch (e) {
     console.error("Failed to add discipline:", e);
+    disciplineError.value = e.response?.data?.detail ?? "Не вдалося додати дисципліну";
   }
 };
 
@@ -186,6 +231,9 @@ const tabs = [
     </div>
 
     <section v-if="activeTab === 'groups'">
+      <div v-if="groupError" class="error-message">
+        {{ groupError }}
+      </div>
       <form
         @submit.prevent="addGroup"
         class="flex gap-2 items-center mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg"
@@ -261,6 +309,9 @@ const tabs = [
     </section>
 
     <section v-if="activeTab === 'students'">
+      <div v-if="studentError" class="error-message">
+        {{ studentError }}
+      </div>
       <form
         @submit.prevent="addStudent"
         class="flex gap-2 items-center mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg"
@@ -272,6 +323,7 @@ const tabs = [
           required
         />
         <Select
+          :key="groups.length"
           v-model="newStudent.groupId"
           :options="groups"
           optionLabel="name"
@@ -360,6 +412,9 @@ const tabs = [
     </section>
 
     <section v-if="activeTab === 'teachers'">
+      <div v-if="teacherError" class="error-message">
+        {{ teacherError }}
+      </div>
       <form
         @submit.prevent="addTeacher"
         class="flex flex-col gap-3 mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg"
@@ -387,10 +442,10 @@ const tabs = [
               :key="d.id"
               class="flex items-center gap-1 text-sm cursor-pointer select-none"
             >
-              <input
-                type="checkbox"
-                :checked="newTeacher.disciplineIds.includes(d.id)"
-                @change="toggleDisciplineForTeacher(d.id)"
+              <Checkbox
+                :modelValue="newTeacher.disciplineIds.includes(d.id)"
+                :binary="true"
+                @update:modelValue="() => toggleDisciplineForTeacher(d.id)"
               />
               {{ d.name }}
             </label>
@@ -442,10 +497,10 @@ const tabs = [
                 :key="d.id"
                 class="flex items-center gap-1 text-xs cursor-pointer select-none"
               >
-                <input
-                  type="checkbox"
-                  :checked="editForm.disciplineIds.includes(d.id)"
-                  @change="toggleEditDiscipline(d.id)"
+                <Checkbox
+                  :modelValue="editForm.disciplineIds.includes(d.id)"
+                  :binary="true"
+                  @update:modelValue="() => toggleEditDiscipline(d.id)"
                 />
                 {{ d.name }}
               </label>
@@ -481,12 +536,7 @@ const tabs = [
                   severity="info"
                   size="small"
                   rounded
-                  @click="
-                    startEdit('teacher', {
-                      ...slotProps.data,
-                      disciplineIds: [...slotProps.data.disciplineIds],
-                    })
-                  "
+                  @click="startEdit('teacher', slotProps.data)"
                 />
                 <Button
                   icon="pi pi-trash"
@@ -503,6 +553,9 @@ const tabs = [
     </section>
 
     <section v-if="activeTab === 'disciplines'">
+      <div v-if="disciplineError" class="error-message">
+        {{ disciplineError }}
+      </div>
       <form
         @submit.prevent="addDiscipline"
         class="flex gap-2 items-center mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg"
@@ -596,7 +649,7 @@ const tabs = [
 
 <style scoped>
 .page-wide {
-  max-width: 1100px;
+  max-width: 1200px;
 }
 .admin-info {
   background: #fef3c7;
@@ -608,5 +661,14 @@ const tabs = [
 .admin-info h4 {
   color: #92400e;
   margin-bottom: 8px;
+}
+.error-message {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #991b1b;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  margin-bottom: 12px;
 }
 </style>
