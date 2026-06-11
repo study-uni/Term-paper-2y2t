@@ -30,9 +30,7 @@ class SQLAlchemyBaseRepository(BaseRepository[T]):
         self.model_cls = model_cls
 
     def get_by_id(self, id: int) -> T | None:
-        return (
-            self.session.query(self.model_cls).filter(self.model_cls.id == id).first()
-        )
+        return self.session.get(self.model_cls, id)
 
     def get_all(self) -> list[T]:
         return self.session.query(self.model_cls).all()

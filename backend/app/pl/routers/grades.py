@@ -29,7 +29,7 @@ def get_my_grades(
     try:
         return service.get_my_grades(current_user.student_id)
     except StudentNotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
 @router.get("/journal", response_model=list[GradeResponse])
@@ -46,16 +46,19 @@ def get_teacher_journal(
     try:
         return service.get_teacher_journal(current_user.teacher_id, discipline_id)
     except TeacherNotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except AccessDeniedException as e:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e)) from e
 
 
-@router.post("/ensure", response_model=GradeResponse)
+@router.post(
+    "/ensure",
+    response_model=GradeResponse,
+    dependencies=[Depends(require_role(["admin", "manager", "teacher"]))],
+)
 def ensure_grade(
     req: GradeEnsure,
     service: GradeService = Depends(get_grade_service),
-    _current_user: User = Depends(require_role(["admin", "manager", "teacher"])),
 ):
     try:
         return service.ensure_grade(req.student_id, req.discipline_id, req.teacher_id)
@@ -64,7 +67,7 @@ def ensure_grade(
         DisciplineNotFoundException,
         TeacherNotFoundException,
     ) as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
 @router.put("/{grade_id}", response_model=GradeResponse)
@@ -79,6 +82,6 @@ def update_grade(
             grade_id, req.grade, current_user.role, current_user.teacher_id
         )
     except GradeNotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except AccessDeniedException as e:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e)) from e

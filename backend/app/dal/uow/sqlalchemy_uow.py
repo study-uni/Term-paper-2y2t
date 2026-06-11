@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 
 from sqlalchemy.orm import Session
 
@@ -26,6 +27,7 @@ class AbstractUnitOfWork(ABC):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        _ = (exc_val, exc_tb)
         if exc_type:
             self.rollback()
 
@@ -39,22 +41,24 @@ class AbstractUnitOfWork(ABC):
 
 
 class SQLAlchemyUnitOfWork(AbstractUnitOfWork):
-    def __init__(self, session_factory):
+    def __init__(self, session_factory: Callable[[], Session]):
         self.session_factory = session_factory
-        self.session: Optional[Session] = None
+        self.session: Session | None = None
 
     def __enter__(self) -> AbstractUnitOfWork:
-        self.session = self.session_factory()
-        self.users = UserRepository(self.session)
-        self.groups = GroupRepository(self.session)
-        self.students = StudentRepository(self.session)
-        self.teachers = TeacherRepository(self.session)
-        self.disciplines = DisciplineRepository(self.session)
-        self.grades = GradeRepository(self.session)
-        self.department_info = DepartmentInfoRepository(self.session)
+        session = self.session_factory()
+        self.session = session
+        self.users = UserRepository(session)
+        self.groups = GroupRepository(session)
+        self.students = StudentRepository(session)
+        self.teachers = TeacherRepository(session)
+        self.disciplines = DisciplineRepository(session)
+        self.grades = GradeRepository(session)
+        self.department_info = DepartmentInfoRepository(session)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        _ = (exc_val, exc_tb)
         try:
             if exc_type:
                 self.rollback()

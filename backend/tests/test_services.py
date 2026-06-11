@@ -68,12 +68,15 @@ def test_get_my_grades_success():
     mock_uow.students.get_by_id.return_value = Student(id=5, name="Олег Петров")
 
     mock_grade = Grade(id=10, student_id=5, discipline_id=1, teacher_id=2, grade=95)
-    # mock relationships that _to_grade_response accesses
     mock_grade.student = Student(name="Олег Петров")
-    mock_grade.discipline = MagicMock(name="Веб-програмування")
-    mock_grade.discipline.name = "Веб-програмування"
-    mock_grade.teacher = MagicMock()
-    mock_grade.teacher.name = "Прокопенко Андрій Васильович"
+
+    disc_mock = MagicMock()
+    disc_mock.name = "Веб-програмування"
+    mock_grade.discipline = disc_mock  # type: ignore
+
+    teacher_mock = MagicMock()
+    teacher_mock.name = "Прокопенко Андрій Васильович"
+    mock_grade.teacher = teacher_mock  # type: ignore
 
     mock_uow.grades.get_by_student_id.return_value = [mock_grade]
     service = GradeService(mock_uow)

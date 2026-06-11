@@ -22,8 +22,8 @@ def get_current_user(
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
         )
-        username: str = payload.get("sub")
-        if username is None:
+        username = payload.get("sub")
+        if not username or not isinstance(username, str):
             raise credentials_exception
     except jwt.PyJWTError:
         raise credentials_exception from None

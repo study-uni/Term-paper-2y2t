@@ -3,16 +3,20 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-import app.dal.models  # Register models in metadata
+from app.dal import models
 from app.dal.database import Base, SessionLocal, engine
 from app.pl.routers.auth import router as auth_router
 from app.pl.routers.department import router as department_router
 from app.pl.routers.grades import router as grades_router
 from app.seed import seed_db
 
+# Reference models to trigger schema side-effects and satisfy Pyright
+_ = models
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _ = app
     # Initialize DB schema
     Base.metadata.create_all(bind=engine)
 

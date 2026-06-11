@@ -1,5 +1,7 @@
+from typing import Optional
+
 from sqlalchemy import Column, ForeignKey, Integer, String, Table, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.dal.database import Base
 
@@ -25,112 +27,118 @@ teacher_discipline_association = Table(
 class User(Base):
     __tablename__ = "users"
 
-    id: int = Column(Integer, primary_key=True, index=True)
-    username: str = Column(String, unique=True, index=True, nullable=False)
-    hashed_password: str = Column(String, nullable=False)
-    role: str = Column(String, nullable=False)  # admin, manager, teacher, student
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    username: Mapped[str] = mapped_column(
+        String, unique=True, index=True, nullable=False
+    )
+    hashed_password: Mapped[str] = mapped_column(String, nullable=False)
+    role: Mapped[str] = mapped_column(
+        String, nullable=False
+    )  # admin, manager, teacher, student
 
-    teacher_id: int | None = Column(
+    teacher_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("teachers.id", ondelete="SET NULL"), nullable=True
     )
-    student_id: int | None = Column(
+    student_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("students.id", ondelete="SET NULL"), nullable=True
     )
 
-    teacher: "Teacher" = relationship("Teacher", back_populates="user")
-    student: "Student" = relationship("Student", back_populates="user")
+    teacher: Mapped[Optional["Teacher"]] = relationship(back_populates="user")
+    student: Mapped[Optional["Student"]] = relationship(back_populates="user")
 
 
 class DepartmentInfo(Base):
     __tablename__ = "department_info"
 
-    id: int = Column(Integer, primary_key=True, default=1)
-    name: str = Column(String, nullable=False)
-    description: str | None = Column(Text, nullable=True)
-    head: str | None = Column(String, nullable=True)
-    email: str | None = Column(String, nullable=True)
-    phone: str | None = Column(String, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    head: Mapped[str | None] = mapped_column(String, nullable=True)
+    email: Mapped[str | None] = mapped_column(String, nullable=True)
+    phone: Mapped[str | None] = mapped_column(String, nullable=True)
 
 
 class Group(Base):
     __tablename__ = "groups"
 
-    id: int = Column(Integer, primary_key=True, index=True)
-    name: str = Column(String, unique=True, index=True, nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
 
-    students: list["Student"] = relationship(
-        "Student", back_populates="group", cascade="all, delete-orphan"
+    students: Mapped[list["Student"]] = relationship(
+        back_populates="group", cascade="all, delete-orphan"
     )
 
 
 class Student(Base):
     __tablename__ = "students"
 
-    id: int = Column(Integer, primary_key=True, index=True)
-    name: str = Column(String, nullable=False)
-    group_id: int = Column(
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    group_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("groups.id", ondelete="CASCADE"), nullable=False
     )
 
-    group: "Group" = relationship("Group", back_populates="students")
-    grades: list["Grade"] = relationship(
-        "Grade", back_populates="student", cascade="all, delete-orphan"
+    group: Mapped[Optional["Group"]] = relationship(back_populates="students")
+    grades: Mapped[list["Grade"]] = relationship(
+        back_populates="student", cascade="all, delete-orphan"
     )
-    user: "User" = relationship("User", back_populates="student", uselist=False)
+    user: Mapped[Optional["User"]] = relationship(
+        back_populates="student", uselist=False
+    )
 
 
 class Teacher(Base):
     __tablename__ = "teachers"
 
-    id: int = Column(Integer, primary_key=True, index=True)
-    name: str = Column(String, nullable=False)
-    position: str = Column(
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    position: Mapped[str] = mapped_column(
         String, nullable=False
     )  # Professor, Associate Professor, Assistant
 
-    disciplines: list["Discipline"] = relationship(
-        "Discipline",
+    disciplines: Mapped[list["Discipline"]] = relationship(
         secondary=teacher_discipline_association,
         back_populates="teachers",
     )
-    grades: list["Grade"] = relationship(
-        "Grade", back_populates="teacher", cascade="all, delete-orphan"
+    grades: Mapped[list["Grade"]] = relationship(
+        back_populates="teacher", cascade="all, delete-orphan"
     )
-    user: "User" = relationship("User", back_populates="teacher", uselist=False)
+    user: Mapped[Optional["User"]] = relationship(
+        back_populates="teacher", uselist=False
+    )
 
 
 class Discipline(Base):
     __tablename__ = "disciplines"
 
-    id: int = Column(Integer, primary_key=True, index=True)
-    name: str = Column(String, unique=True, index=True, nullable=False)
-    description: str | None = Column(Text, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    teachers: list["Teacher"] = relationship(
-        "Teacher",
+    teachers: Mapped[list["Teacher"]] = relationship(
         secondary=teacher_discipline_association,
         back_populates="disciplines",
     )
-    grades: list["Grade"] = relationship(
-        "Grade", back_populates="discipline", cascade="all, delete-orphan"
+    grades: Mapped[list["Grade"]] = relationship(
+        back_populates="discipline", cascade="all, delete-orphan"
     )
 
 
 class Grade(Base):
     __tablename__ = "grades"
 
-    id: int = Column(Integer, primary_key=True, index=True)
-    student_id: int = Column(
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    student_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("students.id", ondelete="CASCADE"), nullable=False
     )
-    discipline_id: int = Column(
+    discipline_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("disciplines.id", ondelete="CASCADE"), nullable=False
     )
-    teacher_id: int = Column(
+    teacher_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False
     )
-    grade: int = Column(Integer, nullable=False, default=0)
+    grade: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-    student: "Student" = relationship("Student", back_populates="grades")
-    discipline: "Discipline" = relationship("Discipline", back_populates="grades")
-    teacher: "Teacher" = relationship("Teacher", back_populates="grades")
+    student: Mapped[Optional["Student"]] = relationship(back_populates="grades")
+    discipline: Mapped[Optional["Discipline"]] = relationship(back_populates="grades")
+    teacher: Mapped[Optional["Teacher"]] = relationship(back_populates="grades")
