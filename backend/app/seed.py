@@ -14,7 +14,7 @@ from app.security import get_password_hash
 
 
 def sync_sequences(db: Session):
-    if db.bind.dialect.name == "postgresql":
+    if db.bind and db.bind.dialect.name == "postgresql":
         tables = [
             "department_info",
             "disciplines",
@@ -28,7 +28,8 @@ def sync_sequences(db: Session):
             try:
                 db.execute(
                     text(
-                        f"SELECT setval(pg_get_serial_sequence('{table}', 'id'), COALESCE(max(id), 1)) FROM {table}"
+                        f"SELECT setval(pg_get_serial_sequence('{table}', 'id'), "
+                        f"COALESCE(max(id), 1)) FROM {table}"
                     )
                 )
             except Exception as e:
@@ -154,4 +155,3 @@ def seed_db(db: Session):
     db.commit()
     print("Database seeding completed successfully.")
     sync_sequences(db)
-

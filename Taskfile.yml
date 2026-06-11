@@ -2,41 +2,89 @@ version: "3"
 
 tasks:
   dev:run:
-    desc: "Run all services (backend, frontend, and db)"
+    desc: "Run all services (backend, frontend, and db) in the background"
     cmds:
-      - docker-compose up -d
+      - docker compose up -d
+
+  dev:build:
+    desc: "Build or rebuild all docker service images"
+    cmds:
+      - docker compose build
+
+  dev:run-build:
+    desc: "Build and start all services (fixes cache issues after pull/merge)"
+    cmds:
+      - docker compose up -d --build
 
   dev:stop:
-    desc: "Stop all services"
+    desc: "Stop and remove all containers"
     cmds:
-      - docker-compose down
+      - docker compose down
+
+  dev:logs:
+    desc: "View logs from all running containers"
+    cmds:
+      - docker compose logs -f
 
   dev:backend:run:
-    desc: "Run backend and db"
+    desc: "Run backend and db only"
     cmds:
-      - docker-compose up -d backend
+      - docker compose up -d backend
+
+  dev:backend:rebuild:
+    desc: "Rebuild and restart the backend container only"
+    cmds:
+      - docker compose build backend
+      - docker compose up -d backend
 
   dev:backend:stop:
-    desc: "Stop backend"
+    desc: "Stop backend container"
     cmds:
-      - docker-compose stop backend
+      - docker compose stop backend
 
   dev:frontend:run:
-    desc: "Run frontend"
+    desc: "Run frontend container only"
     cmds:
-      - docker-compose up -d frontend
+      - docker compose up -d frontend
+
+  dev:frontend:rebuild:
+    desc: "Rebuild and restart the frontend container only (updates frontend assets)"
+    cmds:
+      - docker compose build frontend
+      - docker compose up -d frontend
 
   dev:frontend:stop:
-    desc: "Stop frontend"
+    desc: "Stop frontend container"
     cmds:
-      - docker-compose stop frontend
+      - docker compose stop frontend
 
   dev:db:run:
-    desc: "Run database"
+    desc: "Run database container only"
     cmds:
-      - docker-compose up -d db
+      - docker compose up -d db
 
   dev:db:stop:
-    desc: "Stop database"
+    desc: "Stop database container"
     cmds:
-      - docker-compose stop db
+      - docker compose stop db
+
+  test:
+    desc: "Run backend tests locally"
+    dir: backend
+    cmds:
+      - poetry run pytest
+
+  lint:
+    desc: "Check backend code style and types locally"
+    dir: backend
+    cmds:
+      - poetry run ruff check
+      - poetry run ruff format --check
+      - npx pyright ..
+
+  lint:fix:
+    desc: "Fix backend code style and formatting issues locally"
+    dir: backend
+    cmds:
+      - poetry run ruff check --fix
+      - poetry run ruff format

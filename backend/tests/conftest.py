@@ -13,7 +13,9 @@ from app.seed import seed_db
 TEST_DATABASE_URL = "sqlite:///./test_api.db"
 
 engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, expire_on_commit=False, bind=engine)
+TestingSessionLocal = sessionmaker(
+    autocommit=False, autoflush=False, expire_on_commit=False, bind=engine
+)
 
 
 @pytest.fixture(scope="session", autouse=True)
