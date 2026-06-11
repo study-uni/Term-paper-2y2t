@@ -17,22 +17,26 @@ const newTeacher = ref({ name: "", position: "Асистент", disciplineIds: 
 const teacherError = ref("");
 
 const isEditDialogVisible = ref(false);
-const editForm = ref({ id: null, name: "", position: "Асистент", disciplineIds: [] });
+const editForm = ref({
+  id: null,
+  name: "",
+  position: "Асистент",
+  disciplineIds: [],
+});
 
 const addTeacher = async () => {
   teacherError.value = "";
   const name = newTeacher.value.name.trim();
   if (!name) return;
   try {
-    await department.addTeacher(
-      name,
-      newTeacher.value.position,
-      [...newTeacher.value.disciplineIds],
-    );
+    await department.addTeacher(name, newTeacher.value.position, [
+      ...newTeacher.value.disciplineIds,
+    ]);
     newTeacher.value = { name: "", position: "Асистент", disciplineIds: [] };
   } catch (e) {
     console.error("Failed to add teacher:", e);
-    teacherError.value = e.response?.data?.detail ?? "Не вдалося додати викладача";
+    teacherError.value =
+      e.response?.data?.detail ?? "Не вдалося додати викладача";
   }
 };
 
@@ -48,7 +52,12 @@ const openEditDialog = (teacher) => {
 
 const closeEditDialog = () => {
   isEditDialogVisible.value = false;
-  editForm.value = { id: null, name: "", position: "Асистент", disciplineIds: [] };
+  editForm.value = {
+    id: null,
+    name: "",
+    position: "Асистент",
+    disciplineIds: [],
+  };
 };
 
 const saveEdit = async () => {
@@ -78,7 +87,9 @@ const saveEdit = async () => {
       @submit.prevent="addTeacher"
       class="flex flex-col gap-4 mb-6 p-5 bg-white border border-slate-200 rounded-2xl shadow-sm"
     >
-      <div class="flex flex-col md:flex-row gap-3 w-full items-stretch md:items-center">
+      <div
+        class="flex flex-col md:flex-row gap-3 w-full items-stretch md:items-center"
+      >
         <InputText
           v-model="newTeacher.name"
           placeholder="ПІБ викладача"
@@ -94,7 +105,9 @@ const saveEdit = async () => {
         />
       </div>
 
-      <div class="flex flex-col gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+      <div
+        class="flex flex-col gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100"
+      >
         <span class="text-sm font-semibold text-slate-600">Дисципліни:</span>
         <div class="flex flex-wrap gap-x-6 gap-y-3">
           <div
@@ -107,7 +120,11 @@ const saveEdit = async () => {
               :value="d.id"
               :inputId="'new-t-disc-' + d.id"
             />
-            <label :for="'new-t-disc-' + d.id" class="cursor-pointer font-medium">{{ d.name }}</label>
+            <label
+              :for="'new-t-disc-' + d.id"
+              class="cursor-pointer font-medium"
+              >{{ d.name }}</label
+            >
           </div>
           <div v-if="disciplines.length === 0" class="text-xs text-slate-400">
             Немає створених дисциплін
@@ -136,12 +153,16 @@ const saveEdit = async () => {
     >
       <Column header="ПІБ" sortable field="name">
         <template #body="slotProps">
-          <span class="font-medium text-slate-800">{{ slotProps.data.name }}</span>
+          <span class="font-medium text-slate-800">{{
+            slotProps.data.name
+          }}</span>
         </template>
       </Column>
       <Column header="Посада" sortable field="position">
         <template #body="slotProps">
-          <span class="badge font-semibold bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-100">
+          <span
+            class="badge font-semibold bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-100"
+          >
             {{ slotProps.data.position }}
           </span>
         </template>
@@ -149,7 +170,10 @@ const saveEdit = async () => {
       <Column header="Дисципліни">
         <template #body="slotProps">
           <span class="text-slate-600 text-sm">
-            {{ department.teacherDisciplineNames(slotProps.data.id).join(", ") || "—" }}
+            {{
+              department.teacherDisciplineNames(slotProps.data.id).join(", ") ||
+              "—"
+            }}
           </span>
         </template>
       </Column>
@@ -190,7 +214,9 @@ const saveEdit = async () => {
     >
       <div class="flex flex-col gap-4 py-3">
         <div class="flex flex-col gap-2">
-          <label for="teacher-name" class="font-semibold text-slate-700 text-sm">ПІБ викладача</label>
+          <label for="teacher-name" class="font-semibold text-slate-700 text-sm"
+            >ПІБ викладача</label
+          >
           <InputText
             id="teacher-name"
             v-model="editForm.name"
@@ -199,7 +225,11 @@ const saveEdit = async () => {
           />
         </div>
         <div class="flex flex-col gap-2">
-          <label for="teacher-position" class="font-semibold text-slate-700 text-sm">Посада</label>
+          <label
+            for="teacher-position"
+            class="font-semibold text-slate-700 text-sm"
+            >Посада</label
+          >
           <Select
             id="teacher-position"
             v-model="editForm.position"
@@ -208,8 +238,12 @@ const saveEdit = async () => {
             required
           />
         </div>
-        <div class="flex flex-col gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100 mt-2">
-          <span class="text-sm font-semibold text-slate-700">Дисципліни викладача:</span>
+        <div
+          class="flex flex-col gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100 mt-2"
+        >
+          <span class="text-sm font-semibold text-slate-700"
+            >Дисципліни викладача:</span
+          >
           <div class="flex flex-wrap gap-x-6 gap-y-3 mt-1">
             <div
               v-for="d in disciplines"
@@ -221,7 +255,11 @@ const saveEdit = async () => {
                 :value="d.id"
                 :inputId="'edit-t-disc-' + d.id"
               />
-              <label :for="'edit-t-disc-' + d.id" class="cursor-pointer font-medium">{{ d.name }}</label>
+              <label
+                :for="'edit-t-disc-' + d.id"
+                class="cursor-pointer font-medium"
+                >{{ d.name }}</label
+              >
             </div>
           </div>
         </div>

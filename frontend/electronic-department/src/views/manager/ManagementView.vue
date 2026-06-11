@@ -24,23 +24,32 @@ const canEditDepartmentInfo = computed(() => auth.role === "admin");
 <template>
   <div class="page-container page-wide max-w-7xl mx-auto">
     <div class="mb-6">
-      <h2><i class="pi pi-sliders-h text-indigo-600"></i> Підсистема управління</h2>
+      <h2>
+        <i class="pi pi-sliders-h text-indigo-600"></i> Підсистема управління
+      </h2>
       <p v-if="auth.role === 'admin'" class="text-slate-500">
         Адміністратор: повний доступ до структури кафедри та довідників.
       </p>
       <p v-else class="text-slate-500">
-        Менеджер: додавання та редагування викладачів, студентів, груп і дисциплін.
+        Менеджер: додавання та редагування викладачів, студентів, груп і
+        дисциплін.
       </p>
     </div>
 
     <!-- Admin Department Info Card -->
-    <div v-if="canEditDepartmentInfo" class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 p-6 rounded-2xl mb-8 shadow-sm">
+    <div
+      v-if="canEditDepartmentInfo"
+      class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 p-6 rounded-2xl mb-8 shadow-sm"
+    >
       <h3 class="text-amber-800 font-bold text-lg mb-4 flex items-center gap-2">
-        <i class="pi pi-info-circle"></i> Інформація про кафедру (тільки адміністратор)
+        <i class="pi pi-info-circle"></i> Інформація про кафедру (тільки
+        адміністратор)
       </h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="flex flex-col gap-2">
-          <label class="font-semibold text-amber-950 text-sm">Назва кафедри</label>
+          <label class="font-semibold text-amber-950 text-sm"
+            >Назва кафедри</label
+          >
           <InputText
             v-model="department.info.name"
             @change="department.persist()"
@@ -49,7 +58,9 @@ const canEditDepartmentInfo = computed(() => auth.role === "admin");
         </div>
 
         <div class="flex flex-col gap-2">
-          <label class="font-semibold text-amber-950 text-sm">Опис кафедри</label>
+          <label class="font-semibold text-amber-950 text-sm"
+            >Опис кафедри</label
+          >
           <Textarea
             v-model="department.info.description"
             rows="2"

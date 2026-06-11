@@ -90,7 +90,9 @@ const saveEdit = async () => {
     >
       <Column header="Група" sortable field="name">
         <template #body="slotProps">
-          <span class="font-medium text-slate-800">{{ slotProps.data.name }}</span>
+          <span class="font-medium text-slate-800">{{
+            slotProps.data.name
+          }}</span>
         </template>
       </Column>
       <Column header="Дії" style="width: 8rem; text-align: right">
@@ -130,7 +132,9 @@ const saveEdit = async () => {
     >
       <div class="flex flex-col gap-4 py-3">
         <div class="flex flex-col gap-2">
-          <label for="group-name" class="font-semibold text-slate-700 text-sm">Назва групи</label>
+          <label for="group-name" class="font-semibold text-slate-700 text-sm"
+            >Назва групи</label
+          >
           <InputText
             id="group-name"
             v-model="editForm.name"

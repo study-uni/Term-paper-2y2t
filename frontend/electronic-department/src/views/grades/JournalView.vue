@@ -44,9 +44,7 @@ const journalRows = computed(() => {
   if (!teacherId.value) return [];
   let rows = department.journalForTeacher(teacherId.value);
   if (selectedDisciplineId.value != null) {
-    rows = rows.filter(
-      (r) => r.discipline_id === selectedDisciplineId.value,
-    );
+    rows = rows.filter((r) => r.discipline_id === selectedDisciplineId.value);
   }
   return rows;
 });

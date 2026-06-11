@@ -46,7 +46,8 @@ const addStudent = async () => {
     newStudent.value.name = "";
   } catch (e) {
     console.error("Failed to add student:", e);
-    studentError.value = e.response?.data?.detail ?? "Не вдалося додати студента";
+    studentError.value =
+      e.response?.data?.detail ?? "Не вдалося додати студента";
   }
 };
 
@@ -126,13 +127,21 @@ const saveEdit = async () => {
     >
       <Column header="ПІБ" sortable field="name">
         <template #body="slotProps">
-          <span class="font-medium text-slate-800">{{ slotProps.data.name }}</span>
+          <span class="font-medium text-slate-800">{{
+            slotProps.data.name
+          }}</span>
         </template>
       </Column>
       <Column header="Група" sortable field="groupName">
         <template #body="slotProps">
-          <span class="badge font-semibold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-100">
-            {{ slotProps.data.groupName ?? department.groupById(slotProps.data.groupId)?.name ?? "—" }}
+          <span
+            class="badge font-semibold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-100"
+          >
+            {{
+              slotProps.data.groupName ??
+              department.groupById(slotProps.data.groupId)?.name ??
+              "—"
+            }}
           </span>
         </template>
       </Column>
@@ -173,7 +182,9 @@ const saveEdit = async () => {
     >
       <div class="flex flex-col gap-4 py-3">
         <div class="flex flex-col gap-2">
-          <label for="student-name" class="font-semibold text-slate-700 text-sm">ПІБ студента</label>
+          <label for="student-name" class="font-semibold text-slate-700 text-sm"
+            >ПІБ студента</label
+          >
           <InputText
             id="student-name"
             v-model="editForm.name"
@@ -182,7 +193,11 @@ const saveEdit = async () => {
           />
         </div>
         <div class="flex flex-col gap-2">
-          <label for="student-group" class="font-semibold text-slate-700 text-sm">Група</label>
+          <label
+            for="student-group"
+            class="font-semibold text-slate-700 text-sm"
+            >Група</label
+          >
           <Select
             id="student-group"
             v-model="editForm.groupId"

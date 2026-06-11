@@ -30,7 +30,8 @@ const addDiscipline = async () => {
     newDiscipline.value = { name: "", description: "" };
   } catch (e) {
     console.error("Failed to add discipline:", e);
-    disciplineError.value = e.response?.data?.detail ?? "Не вдалося додати дисципліну";
+    disciplineError.value =
+      e.response?.data?.detail ?? "Не вдалося додати дисципліну";
   }
 };
 
@@ -102,12 +103,16 @@ const saveEdit = async () => {
     >
       <Column header="Назва" sortable field="name">
         <template #body="slotProps">
-          <span class="font-semibold text-slate-800">{{ slotProps.data.name }}</span>
+          <span class="font-semibold text-slate-800">{{
+            slotProps.data.name
+          }}</span>
         </template>
       </Column>
       <Column header="Опис" field="description">
         <template #body="slotProps">
-          <span class="text-slate-600 text-sm">{{ slotProps.data.description || "—" }}</span>
+          <span class="text-slate-600 text-sm">{{
+            slotProps.data.description || "—"
+          }}</span>
         </template>
       </Column>
       <Column header="Дії" style="width: 8rem; text-align: right">
@@ -147,7 +152,9 @@ const saveEdit = async () => {
     >
       <div class="flex flex-col gap-4 py-3">
         <div class="flex flex-col gap-2">
-          <label for="disc-name" class="font-semibold text-slate-700 text-sm">Назва дисципліни</label>
+          <label for="disc-name" class="font-semibold text-slate-700 text-sm"
+            >Назва дисципліни</label
+          >
           <InputText
             id="disc-name"
             v-model="editForm.name"
@@ -156,7 +163,9 @@ const saveEdit = async () => {
           />
         </div>
         <div class="flex flex-col gap-2">
-          <label for="disc-desc" class="font-semibold text-slate-700 text-sm">Опис</label>
+          <label for="disc-desc" class="font-semibold text-slate-700 text-sm"
+            >Опис</label
+          >
           <Textarea
             id="disc-desc"
             v-model="editForm.description"

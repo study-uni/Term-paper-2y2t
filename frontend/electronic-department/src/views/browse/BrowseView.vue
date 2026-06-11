@@ -18,8 +18,7 @@ const studentsDisplay = computed(() =>
   students.value.map((s) => ({
     id: s.id,
     name: s.name,
-    group:
-      s.groupName ?? department.groupById(s.groupId)?.name ?? "—",
+    group: s.groupName ?? department.groupById(s.groupId)?.name ?? "—",
     groupId: s.groupId,
   })),
 );
