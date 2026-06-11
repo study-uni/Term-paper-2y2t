@@ -3,15 +3,17 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import Base, SessionLocal, engine
-from app.routers.auth import router as auth_router
-from app.routers.department import router as department_router
-from app.routers.grades import router as grades_router
+import app.dal.models  # Register models in metadata
+from app.dal.database import Base, SessionLocal, engine
+from app.pl.routers.auth import router as auth_router
+from app.pl.routers.department import router as department_router
+from app.pl.routers.grades import router as grades_router
 from app.seed import seed_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Initialize DB schema
     Base.metadata.create_all(bind=engine)
 
     db = SessionLocal()

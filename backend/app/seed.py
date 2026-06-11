@@ -1,8 +1,16 @@
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.auth import get_password_hash
-from app.models import DepartmentInfo, Discipline, Grade, Group, Student, Teacher, User
+from app.dal.models import (
+    DepartmentInfo,
+    Discipline,
+    Grade,
+    Group,
+    Student,
+    Teacher,
+    User,
+)
+from app.security import get_password_hash
 
 
 def sync_sequences(db: Session):
