@@ -42,3 +42,8 @@ select = [
     "N",   # pep8-naming
 ]
 ignore = ["B008", "N818"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
