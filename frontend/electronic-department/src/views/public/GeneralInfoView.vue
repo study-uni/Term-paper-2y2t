@@ -88,6 +88,9 @@ const positionOptions = [
           </template>
         </Column>
         <Column field="subject" header="Дисципліни"></Column>
+        <template #empty>
+          <div class="empty-message">Викладачів не знайдено.</div>
+        </template>
       </DataTable>
     </section>
 
@@ -113,6 +116,9 @@ const positionOptions = [
           style="font-weight: bold"
         ></Column>
         <Column field="description" header="Опис"></Column>
+        <template #empty>
+          <div class="empty-message">Дисциплін не знайдено.</div>
+        </template>
       </DataTable>
     </section>
   </div>
@@ -120,7 +126,7 @@ const positionOptions = [
 
 <style scoped>
 .page-wide {
-  max-width: 1000px;
+  max-width: 1200px;
 }
 .info-card {
   background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);

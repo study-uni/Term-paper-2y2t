@@ -89,6 +89,9 @@ const ectsSelectOptions = [
             <span class="badge ects-badge">{{ slotProps.data.ECTS }}</span>
           </template>
         </Column>
+        <template #empty>
+          <div class="empty-message">Оцінок не знайдено.</div>
+        </template>
       </DataTable>
     </template>
   </div>

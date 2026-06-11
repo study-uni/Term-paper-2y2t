@@ -1,612 +1,116 @@
 <script setup>
-import { ref, computed } from "vue";
-import { storeToRefs } from "pinia";
+import { computed } from "vue";
 import { useDepartmentStore } from "../../stores/department";
 import { useAuthStore } from "../../stores/auth";
-import DataTable from "primevue/datatable";
-import Column from "primevue/column";
 import InputText from "primevue/inputtext";
-import Select from "primevue/select";
-import Button from "primevue/button";
 import Textarea from "primevue/textarea";
+import Tabs from "primevue/tabs";
+import TabList from "primevue/tablist";
+import Tab from "primevue/tab";
+import TabPanels from "primevue/tabpanels";
+import TabPanel from "primevue/tabpanel";
+
+import ManageGroups from "../../components/ManageGroups.vue";
+import ManageStudents from "../../components/ManageStudents.vue";
+import ManageTeachers from "../../components/ManageTeachers.vue";
+import ManageDisciplines from "../../components/ManageDisciplines.vue";
 
 const department = useDepartmentStore();
 const auth = useAuthStore();
-const { teachers, students, groups, disciplines } = storeToRefs(department);
-
-const activeTab = ref("groups");
-const editingId = ref(null);
-const editForm = ref({});
-
-const newGroupName = ref("");
-const newStudent = ref({ name: "", groupId: null });
-const newTeacher = ref({ name: "", position: "Асистент", disciplineIds: [] });
-const newDiscipline = ref({ name: "", description: "" });
-
-// Initialize groupId when groups load
-if (groups.value.length > 0) {
-  newStudent.value.groupId = groups.value[0].id;
-}
 
 const canEditDepartmentInfo = computed(() => auth.role === "admin");
-
-const startEdit = (type, item) => {
-  editingId.value = `${type}-${item.id}`;
-  editForm.value = { ...item };
-};
-
-const cancelEdit = () => {
-  editingId.value = null;
-  editForm.value = {};
-};
-
-const saveEdit = async (type) => {
-  const id = editForm.value.id;
-  try {
-    if (type === "group") await department.updateGroup(id, editForm.value.name);
-    if (type === "student") {
-      await department.updateStudent(id, {
-        name: editForm.value.name,
-        groupId: editForm.value.groupId,
-      });
-    }
-    if (type === "teacher") {
-      await department.updateTeacher(id, {
-        name: editForm.value.name,
-        position: editForm.value.position,
-        disciplineIds: [...editForm.value.disciplineIds],
-      });
-    }
-    if (type === "discipline") {
-      await department.updateDiscipline(id, {
-        name: editForm.value.name,
-        description: editForm.value.description,
-      });
-    }
-    cancelEdit();
-  } catch (e) {
-    console.error("Failed to save edit:", e);
-  }
-};
-
-const addGroup = async () => {
-  if (!newGroupName.value.trim()) return;
-  try {
-    await department.addGroup(newGroupName.value.trim());
-    newGroupName.value = "";
-  } catch (e) {
-    console.error("Failed to add group:", e);
-  }
-};
-
-const addStudent = async () => {
-  const gId = newStudent.value.groupId || groups.value[0]?.id;
-  if (!newStudent.value.name.trim() || !gId) return;
-  try {
-    await department.addStudent(newStudent.value.name.trim(), gId);
-    newStudent.value.name = "";
-  } catch (e) {
-    console.error("Failed to add student:", e);
-  }
-};
-
-const addTeacher = async () => {
-  if (!newTeacher.value.name.trim()) return;
-  try {
-    await department.addTeacher(
-      newTeacher.value.name.trim(),
-      newTeacher.value.position,
-      [...newTeacher.value.disciplineIds],
-    );
-    newTeacher.value = { name: "", position: "Асистент", disciplineIds: [] };
-  } catch (e) {
-    console.error("Failed to add teacher:", e);
-  }
-};
-
-const addDiscipline = async () => {
-  if (!newDiscipline.value.name.trim()) return;
-  try {
-    await department.addDiscipline(
-      newDiscipline.value.name.trim(),
-      newDiscipline.value.description,
-    );
-    newDiscipline.value = { name: "", description: "" };
-  } catch (e) {
-    console.error("Failed to add discipline:", e);
-  }
-};
-
-const toggleDisciplineForTeacher = (disciplineId) => {
-  const ids = newTeacher.value.disciplineIds;
-  const idx = ids.indexOf(disciplineId);
-  if (idx >= 0) ids.splice(idx, 1);
-  else ids.push(disciplineId);
-};
-
-const toggleEditDiscipline = (disciplineId) => {
-  const ids = editForm.value.disciplineIds;
-  const idx = ids.indexOf(disciplineId);
-  if (idx >= 0) ids.splice(idx, 1);
-  else ids.push(disciplineId);
-};
-
-const isEditing = (type, id) => editingId.value === `${type}-${id}`;
-
-const tabs = [
-  { id: "groups", label: "Групи" },
-  { id: "students", label: "Студенти" },
-  { id: "teachers", label: "Викладачі" },
-  { id: "disciplines", label: "Дисципліни" },
-];
 </script>
 
 <template>
-  <div class="page-container page-wide">
-    <h2><i class="pi pi-sliders-h"></i> Підсистема управління</h2>
-    <p v-if="auth.role === 'admin'">
-      Адміністратор: повний доступ до структури кафедри та довідників.
-    </p>
-    <p v-else>
-      Менеджер: додавання та редагування викладачів, студентів, груп і
-      дисциплін.
-    </p>
+  <div class="page-container page-wide max-w-7xl mx-auto">
+    <div class="mb-6">
+      <h2>
+        <i class="pi pi-sliders-h text-indigo-600"></i> Підсистема управління
+      </h2>
+      <p v-if="auth.role === 'admin'" class="text-slate-500">
+        Адміністратор: повний доступ до структури кафедри та довідників.
+      </p>
+      <p v-else class="text-slate-500">
+        Менеджер: додавання та редагування викладачів, студентів, груп і
+        дисциплін.
+      </p>
+    </div>
 
-    <div v-if="canEditDepartmentInfo" class="admin-info">
-      <h4>Інформація про кафедру (тільки адміністратор)</h4>
-      <div class="flex flex-col gap-2 mt-2">
-        <label class="font-medium text-amber-900 text-sm">Назва кафедри</label>
-        <InputText
-          v-model="department.info.name"
-          @change="department.persist()"
-          class="w-full"
-        />
+    <!-- Admin Department Info Card -->
+    <div
+      v-if="canEditDepartmentInfo"
+      class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 p-6 rounded-2xl mb-8 shadow-sm"
+    >
+      <h3 class="text-amber-800 font-bold text-lg mb-4 flex items-center gap-2">
+        <i class="pi pi-info-circle"></i> Інформація про кафедру (тільки
+        адміністратор)
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="flex flex-col gap-2">
+          <label class="font-semibold text-amber-950 text-sm"
+            >Назва кафедри</label
+          >
+          <InputText
+            v-model="department.info.name"
+            @change="department.persist()"
+            class="w-full rounded-xl border-amber-200/80 focus:border-amber-500 bg-white"
+          />
+        </div>
 
-        <label class="font-medium text-amber-900 text-sm mt-2"
-          >Опис кафедри</label
-        >
-        <Textarea
-          v-model="department.info.description"
-          rows="3"
-          autoResize
-          @change="department.persist()"
-          class="w-full"
-        />
+        <div class="flex flex-col gap-2">
+          <label class="font-semibold text-amber-950 text-sm"
+            >Опис кафедри</label
+          >
+          <Textarea
+            v-model="department.info.description"
+            rows="2"
+            autoResize
+            @change="department.persist()"
+            class="w-full rounded-xl border-amber-200/80 focus:border-amber-500 bg-white"
+          />
+        </div>
       </div>
     </div>
 
-    <div class="tabs flex gap-2 my-4">
-      <Button
-        v-for="tab in tabs"
-        :key="tab.id"
-        :severity="activeTab === tab.id ? 'success' : 'secondary'"
-        :label="tab.label"
-        @click="activeTab = tab.id"
-      />
+    <!-- Dynamic PrimeVue Tabs -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+      <Tabs value="groups">
+        <TabList class="mb-4">
+          <Tab value="groups" class="gap-2">
+            <i class="pi pi-sitemap"></i> Групи
+          </Tab>
+          <Tab value="students" class="gap-2">
+            <i class="pi pi-users"></i> Студенти
+          </Tab>
+          <Tab value="teachers" class="gap-2">
+            <i class="pi pi-id-card"></i> Викладачі
+          </Tab>
+          <Tab value="disciplines" class="gap-2">
+            <i class="pi pi-book"></i> Дисципліни
+          </Tab>
+        </TabList>
+
+        <TabPanels class="pt-4">
+          <TabPanel value="groups">
+            <ManageGroups />
+          </TabPanel>
+          <TabPanel value="students">
+            <ManageStudents />
+          </TabPanel>
+          <TabPanel value="teachers">
+            <ManageTeachers />
+          </TabPanel>
+          <TabPanel value="disciplines">
+            <ManageDisciplines />
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
     </div>
-
-    <section v-if="activeTab === 'groups'">
-      <form
-        @submit.prevent="addGroup"
-        class="flex gap-2 items-center mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg"
-      >
-        <InputText
-          v-model="newGroupName"
-          placeholder="Назва групи (напр. Б-121-24-5)"
-          class="flex-1"
-          required
-        />
-        <Button
-          type="submit"
-          label="Додати групу"
-          icon="pi pi-plus"
-          severity="success"
-        />
-      </form>
-
-      <DataTable
-        :value="groups"
-        class="p-datatable-sm"
-        responsiveLayout="scroll"
-      >
-        <Column header="Група">
-          <template #body="slotProps">
-            <InputText
-              v-if="isEditing('group', slotProps.data.id)"
-              v-model="editForm.name"
-              class="w-full"
-            />
-            <span v-else>{{ slotProps.data.name }}</span>
-          </template>
-        </Column>
-        <Column header="Дії" style="width: 8rem; text-align: right">
-          <template #body="slotProps">
-            <div class="flex gap-2 justify-end">
-              <template v-if="isEditing('group', slotProps.data.id)">
-                <Button
-                  icon="pi pi-check"
-                  severity="success"
-                  size="small"
-                  rounded
-                  @click="saveEdit('group')"
-                />
-                <Button
-                  icon="pi pi-times"
-                  severity="secondary"
-                  size="small"
-                  rounded
-                  @click="cancelEdit"
-                />
-              </template>
-              <template v-else>
-                <Button
-                  icon="pi pi-pencil"
-                  severity="info"
-                  size="small"
-                  rounded
-                  @click="startEdit('group', slotProps.data)"
-                />
-                <Button
-                  icon="pi pi-trash"
-                  severity="danger"
-                  size="small"
-                  rounded
-                  @click="department.removeGroup(slotProps.data.id)"
-                />
-              </template>
-            </div>
-          </template>
-        </Column>
-      </DataTable>
-    </section>
-
-    <section v-if="activeTab === 'students'">
-      <form
-        @submit.prevent="addStudent"
-        class="flex gap-2 items-center mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg"
-      >
-        <InputText
-          v-model="newStudent.name"
-          placeholder="ПІБ студента"
-          class="flex-1"
-          required
-        />
-        <Select
-          v-model="newStudent.groupId"
-          :options="groups"
-          optionLabel="name"
-          optionValue="id"
-          placeholder="Оберіть групу"
-          class="w-64"
-          required
-        />
-        <Button
-          type="submit"
-          label="Додати студента"
-          icon="pi pi-plus"
-          severity="success"
-        />
-      </form>
-
-      <DataTable
-        :value="students"
-        class="p-datatable-sm"
-        responsiveLayout="scroll"
-      >
-        <Column header="ПІБ">
-          <template #body="slotProps">
-            <InputText
-              v-if="isEditing('student', slotProps.data.id)"
-              v-model="editForm.name"
-              class="w-full"
-            />
-            <span v-else>{{ slotProps.data.name }}</span>
-          </template>
-        </Column>
-        <Column header="Група">
-          <template #body="slotProps">
-            <Select
-              v-if="isEditing('student', slotProps.data.id)"
-              v-model="editForm.groupId"
-              :options="groups"
-              optionLabel="name"
-              optionValue="id"
-              class="w-full"
-            />
-            <span v-else>{{
-              department.groupById(slotProps.data.groupId)?.name
-            }}</span>
-          </template>
-        </Column>
-        <Column header="Дії" style="width: 8rem; text-align: right">
-          <template #body="slotProps">
-            <div class="flex gap-2 justify-end">
-              <template v-if="isEditing('student', slotProps.data.id)">
-                <Button
-                  icon="pi pi-check"
-                  severity="success"
-                  size="small"
-                  rounded
-                  @click="saveEdit('student')"
-                />
-                <Button
-                  icon="pi pi-times"
-                  severity="secondary"
-                  size="small"
-                  rounded
-                  @click="cancelEdit"
-                />
-              </template>
-              <template v-else>
-                <Button
-                  icon="pi pi-pencil"
-                  severity="info"
-                  size="small"
-                  rounded
-                  @click="startEdit('student', slotProps.data)"
-                />
-                <Button
-                  icon="pi pi-trash"
-                  severity="danger"
-                  size="small"
-                  rounded
-                  @click="department.removeStudent(slotProps.data.id)"
-                />
-              </template>
-            </div>
-          </template>
-        </Column>
-      </DataTable>
-    </section>
-
-    <section v-if="activeTab === 'teachers'">
-      <form
-        @submit.prevent="addTeacher"
-        class="flex flex-col gap-3 mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg"
-      >
-        <div class="flex gap-3 w-full">
-          <InputText
-            v-model="newTeacher.name"
-            placeholder="ПІБ викладача"
-            class="flex-1"
-            required
-          />
-          <Select
-            v-model="newTeacher.position"
-            :options="['Професор', 'Доцент', 'Асистент']"
-            placeholder="Посада"
-            class="w-64"
-            required
-          />
-        </div>
-        <div class="flex flex-col gap-1">
-          <span class="text-sm font-medium text-slate-600">Дисципліни:</span>
-          <div class="flex flex-wrap gap-4">
-            <label
-              v-for="d in disciplines"
-              :key="d.id"
-              class="flex items-center gap-1 text-sm cursor-pointer select-none"
-            >
-              <input
-                type="checkbox"
-                :checked="newTeacher.disciplineIds.includes(d.id)"
-                @change="toggleDisciplineForTeacher(d.id)"
-              />
-              {{ d.name }}
-            </label>
-          </div>
-        </div>
-        <Button
-          type="submit"
-          label="Додати викладача"
-          icon="pi pi-plus"
-          severity="success"
-          class="self-start"
-        />
-      </form>
-
-      <DataTable
-        :value="teachers"
-        class="p-datatable-sm"
-        responsiveLayout="scroll"
-      >
-        <Column header="ПІБ">
-          <template #body="slotProps">
-            <InputText
-              v-if="isEditing('teacher', slotProps.data.id)"
-              v-model="editForm.name"
-              class="w-full"
-            />
-            <span v-else>{{ slotProps.data.name }}</span>
-          </template>
-        </Column>
-        <Column header="Посада">
-          <template #body="slotProps">
-            <Select
-              v-if="isEditing('teacher', slotProps.data.id)"
-              v-model="editForm.position"
-              :options="['Професор', 'Доцент', 'Асистент']"
-              class="w-full"
-            />
-            <span v-else>{{ slotProps.data.position }}</span>
-          </template>
-        </Column>
-        <Column header="Дисципліни">
-          <template #body="slotProps">
-            <div
-              v-if="isEditing('teacher', slotProps.data.id)"
-              class="flex flex-wrap gap-2"
-            >
-              <label
-                v-for="d in disciplines"
-                :key="d.id"
-                class="flex items-center gap-1 text-xs cursor-pointer select-none"
-              >
-                <input
-                  type="checkbox"
-                  :checked="editForm.disciplineIds.includes(d.id)"
-                  @change="toggleEditDiscipline(d.id)"
-                />
-                {{ d.name }}
-              </label>
-            </div>
-            <span v-else>{{
-              department.teacherDisciplineNames(slotProps.data.id).join(", ") ||
-              "—"
-            }}</span>
-          </template>
-        </Column>
-        <Column header="Дії" style="width: 8rem; text-align: right">
-          <template #body="slotProps">
-            <div class="flex gap-2 justify-end">
-              <template v-if="isEditing('teacher', slotProps.data.id)">
-                <Button
-                  icon="pi pi-check"
-                  severity="success"
-                  size="small"
-                  rounded
-                  @click="saveEdit('teacher')"
-                />
-                <Button
-                  icon="pi pi-times"
-                  severity="secondary"
-                  size="small"
-                  rounded
-                  @click="cancelEdit"
-                />
-              </template>
-              <template v-else>
-                <Button
-                  icon="pi pi-pencil"
-                  severity="info"
-                  size="small"
-                  rounded
-                  @click="
-                    startEdit('teacher', {
-                      ...slotProps.data,
-                      disciplineIds: [...slotProps.data.disciplineIds],
-                    })
-                  "
-                />
-                <Button
-                  icon="pi pi-trash"
-                  severity="danger"
-                  size="small"
-                  rounded
-                  @click="department.removeTeacher(slotProps.data.id)"
-                />
-              </template>
-            </div>
-          </template>
-        </Column>
-      </DataTable>
-    </section>
-
-    <section v-if="activeTab === 'disciplines'">
-      <form
-        @submit.prevent="addDiscipline"
-        class="flex gap-2 items-center mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg"
-      >
-        <InputText
-          v-model="newDiscipline.name"
-          placeholder="Назва дисципліни"
-          class="flex-1"
-          required
-        />
-        <InputText
-          v-model="newDiscipline.description"
-          placeholder="Короткий опис"
-          class="flex-1"
-        />
-        <Button
-          type="submit"
-          label="Додати дисципліну"
-          icon="pi pi-plus"
-          severity="success"
-        />
-      </form>
-
-      <DataTable
-        :value="disciplines"
-        class="p-datatable-sm"
-        responsiveLayout="scroll"
-      >
-        <Column header="Назва">
-          <template #body="slotProps">
-            <InputText
-              v-if="isEditing('discipline', slotProps.data.id)"
-              v-model="editForm.name"
-              class="w-full"
-            />
-            <span v-else>{{ slotProps.data.name }}</span>
-          </template>
-        </Column>
-        <Column header="Опис">
-          <template #body="slotProps">
-            <InputText
-              v-if="isEditing('discipline', slotProps.data.id)"
-              v-model="editForm.description"
-              class="w-full"
-            />
-            <span v-else>{{ slotProps.data.description }}</span>
-          </template>
-        </Column>
-        <Column header="Дії" style="width: 8rem; text-align: right">
-          <template #body="slotProps">
-            <div class="flex gap-2 justify-end">
-              <template v-if="isEditing('discipline', slotProps.data.id)">
-                <Button
-                  icon="pi pi-check"
-                  severity="success"
-                  size="small"
-                  rounded
-                  @click="saveEdit('discipline')"
-                />
-                <Button
-                  icon="pi pi-times"
-                  severity="secondary"
-                  size="small"
-                  rounded
-                  @click="cancelEdit"
-                />
-              </template>
-              <template v-else>
-                <Button
-                  icon="pi pi-pencil"
-                  severity="info"
-                  size="small"
-                  rounded
-                  @click="startEdit('discipline', slotProps.data)"
-                />
-                <Button
-                  icon="pi pi-trash"
-                  severity="danger"
-                  size="small"
-                  rounded
-                  @click="department.removeDiscipline(slotProps.data.id)"
-                />
-              </template>
-            </div>
-          </template>
-        </Column>
-      </DataTable>
-    </section>
   </div>
 </template>
 
 <style scoped>
 .page-wide {
-  max-width: 1100px;
-}
-.admin-info {
-  background: #fef3c7;
-  border: 1px solid #fcd34d;
-  padding: 16px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-}
-.admin-info h4 {
-  color: #92400e;
-  margin-bottom: 8px;
+  max-width: 1400px;
 }
 </style>

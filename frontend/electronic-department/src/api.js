@@ -35,8 +35,24 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       console.warn("Unauthorized access - clearing session");
-      localStorage.removeItem("ed-auth");
-      // Force redirect to general page
+      import("pinia")
+        .then(({ getActivePinia }) => {
+          const pinia = getActivePinia();
+          if (!pinia) {
+            localStorage.removeItem("ed-auth");
+            return;
+          }
+          return Promise.all([
+            import("./stores/auth"),
+            import("./stores/department"),
+          ]).then(([authModule, departmentModule]) => {
+            authModule.useAuthStore(pinia).logout();
+            departmentModule.useDepartmentStore(pinia).clearPrivate();
+          });
+        })
+        .catch(() => {
+          localStorage.removeItem("ed-auth");
+        });
       if (window.location.pathname !== "/") {
         window.location.href = "/";
       }
