@@ -7,6 +7,7 @@
 .vscode/
 *.log
 **/*.log
+.antigravitycli/
 
 # Python / Poetry caches & virtualenvs
 .venv/
