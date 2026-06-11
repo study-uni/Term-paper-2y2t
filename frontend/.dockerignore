@@ -1,0 +1,7 @@
+# Recursively ignore node_modules and builds in any subdirectory
+**/node_modules/
+**/dist/
+.idea/
+.vscode/
+.env*
+.git/
