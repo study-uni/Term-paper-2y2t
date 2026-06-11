@@ -1,10 +1,7 @@
 import axios from "axios";
 
-const primaryBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8001/api";
-const fallbackBaseUrl = import.meta.env.VITE_API_FALLBACK_URL || "http://localhost:8000/api";
-
 const api = axios.create({
-  baseURL: primaryBaseUrl,
+  baseURL: "http://localhost:8001/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -13,6 +10,7 @@ const api = axios.create({
 // Request interceptor to automatically attach JWT token
 api.interceptors.request.use(
   (config) => {
+    // We import auth store dynamically to avoid circular dependency
     const rawAuth = localStorage.getItem("ed-auth");
     if (rawAuth) {
       try {
@@ -26,32 +24,39 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error),
+  (error) => {
+    return Promise.reject(error);
+  },
 );
 
-// Response interceptor to handle auth errors and fallback network issues
+// Response interceptor to handle errors globally
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    const config = error.config;
-
-    if (config && !config.__retry && !error.response) {
-      config.__retry = true;
-      config.baseURL = fallbackBaseUrl;
-      console.warn(
-        `Primary API base URL failed, retrying with fallback ${fallbackBaseUrl}`,
-      );
-      return api.request(config);
-    }
-
+  (error) => {
     if (error.response && error.response.status === 401) {
       console.warn("Unauthorized access - clearing session");
-      localStorage.removeItem("ed-auth");
+      import("pinia")
+        .then(({ getActivePinia }) => {
+          const pinia = getActivePinia();
+          if (!pinia) {
+            localStorage.removeItem("ed-auth");
+            return;
+          }
+          return Promise.all([
+            import("./stores/auth"),
+            import("./stores/department"),
+          ]).then(([authModule, departmentModule]) => {
+            authModule.useAuthStore(pinia).logout();
+            departmentModule.useDepartmentStore(pinia).clearPrivate();
+          });
+        })
+        .catch(() => {
+          localStorage.removeItem("ed-auth");
+        });
       if (window.location.pathname !== "/") {
         window.location.href = "/";
       }
     }
-
     return Promise.reject(error);
   },
 );

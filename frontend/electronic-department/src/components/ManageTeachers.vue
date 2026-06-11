@@ -2,139 +2,155 @@
 import { ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useDepartmentStore } from "../stores/department";
-import DataTable from "primevue/datatable";
-import Column from "primevue/column";
 import InputText from "primevue/inputtext";
 import Select from "primevue/select";
 import Checkbox from "primevue/checkbox";
 import Button from "primevue/button";
+import DataTable from "primevue/datatable";
+import Column from "primevue/column";
 import Dialog from "primevue/dialog";
 
 const department = useDepartmentStore();
 const { teachers, disciplines } = storeToRefs(department);
 
-const positionOptions = ["Професор", "Доцент", "Асистент"];
-
 const newTeacher = ref({ name: "", position: "Асистент", disciplineIds: [] });
-const editDialogVisible = ref(false);
-const editForm = ref({
-  id: null,
-  name: "",
-  position: "Асистент",
-  disciplineIds: [],
-});
+const teacherError = ref("");
 
-const openEdit = (item) => {
-  editForm.value = {
-    ...item,
-    disciplineIds: [...item.disciplineIds],
-  };
-  editDialogVisible.value = true;
-};
-
-const saveEdit = async () => {
-  try {
-    await department.updateTeacher(editForm.value.id, {
-      name: editForm.value.name,
-      position: editForm.value.position,
-      disciplineIds: [...editForm.value.disciplineIds],
-    });
-    editDialogVisible.value = false;
-  } catch (e) {
-    console.error("Failed to save edit:", e);
-  }
-};
+const isEditDialogVisible = ref(false);
+const editForm = ref({ id: null, name: "", position: "Асистент", disciplineIds: [] });
 
 const addTeacher = async () => {
-  if (!newTeacher.value.name.trim()) return;
+  teacherError.value = "";
+  const name = newTeacher.value.name.trim();
+  if (!name) return;
   try {
     await department.addTeacher(
-      newTeacher.value.name.trim(),
+      name,
       newTeacher.value.position,
       [...newTeacher.value.disciplineIds],
     );
     newTeacher.value = { name: "", position: "Асистент", disciplineIds: [] };
   } catch (e) {
     console.error("Failed to add teacher:", e);
+    teacherError.value = e.response?.data?.detail ?? "Не вдалося додати викладача";
   }
 };
 
-const toggleDiscipline = (ids, disciplineId, checked) => {
-  const idx = ids.indexOf(disciplineId);
-  if (checked && idx < 0) ids.push(disciplineId);
-  if (!checked && idx >= 0) ids.splice(idx, 1);
+const openEditDialog = (teacher) => {
+  editForm.value = {
+    id: teacher.id,
+    name: teacher.name,
+    position: teacher.position,
+    disciplineIds: [...(teacher.disciplineIds ?? teacher.discipline_ids ?? [])],
+  };
+  isEditDialogVisible.value = true;
+};
+
+const closeEditDialog = () => {
+  isEditDialogVisible.value = false;
+  editForm.value = { id: null, name: "", position: "Асистент", disciplineIds: [] };
+};
+
+const saveEdit = async () => {
+  const { id, name, position, disciplineIds } = editForm.value;
+  if (!name.trim()) return;
+  try {
+    await department.updateTeacher(id, {
+      name: name.trim(),
+      position,
+      disciplineIds: [...disciplineIds],
+    });
+    closeEditDialog();
+  } catch (e) {
+    console.error("Failed to save edit:", e);
+  }
 };
 </script>
 
 <template>
-  <div>
+  <div class="space-y-6">
+    <div v-if="teacherError" class="error-message">
+      {{ teacherError }}
+    </div>
+
+    <!-- Add Teacher Form -->
     <form
       @submit.prevent="addTeacher"
-      class="flex flex-col gap-3 mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg shadow-sm"
+      class="flex flex-col gap-4 mb-6 p-5 bg-white border border-slate-200 rounded-2xl shadow-sm"
     >
-      <div class="flex gap-3 w-full">
+      <div class="flex flex-col md:flex-row gap-3 w-full items-stretch md:items-center">
         <InputText
           v-model="newTeacher.name"
           placeholder="ПІБ викладача"
-          class="flex-1"
+          class="flex-1 rounded-xl"
           required
         />
         <Select
           v-model="newTeacher.position"
-          :options="positionOptions"
+          :options="['Професор', 'Доцент', 'Асистент']"
           placeholder="Посада"
-          class="w-64"
+          class="w-full md:w-64 rounded-xl"
           required
         />
       </div>
-      <div class="flex flex-col gap-2">
-        <span class="text-sm font-medium text-slate-600">Дисципліни:</span>
-        <div class="flex flex-wrap gap-4">
+
+      <div class="flex flex-col gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+        <span class="text-sm font-semibold text-slate-600">Дисципліни:</span>
+        <div class="flex flex-wrap gap-x-6 gap-y-3">
           <div
             v-for="d in disciplines"
             :key="d.id"
-            class="flex items-center gap-2"
+            class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer select-none"
           >
             <Checkbox
-              :inputId="'new-disc-' + d.id"
-              :modelValue="newTeacher.disciplineIds.includes(d.id)"
-              binary
-              @update:modelValue="
-                (checked) =>
-                  toggleDiscipline(newTeacher.disciplineIds, d.id, checked)
-              "
+              v-model="newTeacher.disciplineIds"
+              :value="d.id"
+              :inputId="'new-t-disc-' + d.id"
             />
-            <label
-              :for="'new-disc-' + d.id"
-              class="text-sm cursor-pointer select-none"
-            >
-              {{ d.name }}
-            </label>
+            <label :for="'new-t-disc-' + d.id" class="cursor-pointer font-medium">{{ d.name }}</label>
+          </div>
+          <div v-if="disciplines.length === 0" class="text-xs text-slate-400">
+            Немає створених дисциплін
           </div>
         </div>
       </div>
+
       <Button
         type="submit"
         label="Додати викладача"
         icon="pi pi-plus"
         severity="success"
-        class="self-start"
+        class="self-start rounded-xl px-5"
       />
     </form>
 
+    <!-- Teachers Table -->
     <DataTable
       :value="teachers"
       class="p-datatable-sm"
       responsiveLayout="scroll"
+      :rows="10"
+      paginator
+      paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+      currentPageReportTemplate="Показано від {first} до {last} з {totalRecords} викладачів"
     >
-      <Column field="name" header="ПІБ" />
-      <Column field="position" header="Посада" />
+      <Column header="ПІБ" sortable field="name">
+        <template #body="slotProps">
+          <span class="font-medium text-slate-800">{{ slotProps.data.name }}</span>
+        </template>
+      </Column>
+      <Column header="Посада" sortable field="position">
+        <template #body="slotProps">
+          <span class="badge font-semibold bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-100">
+            {{ slotProps.data.position }}
+          </span>
+        </template>
+      </Column>
       <Column header="Дисципліни">
         <template #body="slotProps">
-          {{
-            department.teacherDisciplineNames(slotProps.data.id).join(", ") ||
-            "—"
-          }}
+          <span class="text-slate-600 text-sm">
+            {{ department.teacherDisciplineNames(slotProps.data.id).join(", ") || "—" }}
+          </span>
         </template>
       </Column>
       <Column header="Дії" style="width: 8rem; text-align: right">
@@ -145,18 +161,17 @@ const toggleDiscipline = (ids, disciplineId, checked) => {
               severity="info"
               size="small"
               rounded
-              @click="
-                openEdit({
-                  ...slotProps.data,
-                  disciplineIds: [...slotProps.data.disciplineIds],
-                })
-              "
+              outlined
+              title="Редагувати"
+              @click="openEditDialog(slotProps.data)"
             />
             <Button
               icon="pi pi-trash"
               severity="danger"
               size="small"
               rounded
+              outlined
+              title="Видалити"
               @click="department.removeTeacher(slotProps.data.id)"
             />
           </div>
@@ -164,53 +179,69 @@ const toggleDiscipline = (ids, disciplineId, checked) => {
       </Column>
     </DataTable>
 
+    <!-- Edit Dialog -->
     <Dialog
-      v-model:visible="editDialogVisible"
-      header="Редагувати викладача"
+      v-model:visible="isEditDialogVisible"
       modal
-      :style="{ width: '36rem' }"
+      header="Редагувати викладача"
+      class="w-full max-w-lg"
+      :style="{ width: '90vw' }"
+      :breakpoints="{ '960px': '75vw', '641px': '90vw' }"
     >
-      <div class="flex flex-col gap-3 pt-2">
-        <label class="font-medium text-slate-700 text-sm">ПІБ</label>
-        <InputText v-model="editForm.name" class="w-full" autofocus />
-        <label class="font-medium text-slate-700 text-sm">Посада</label>
-        <Select
-          v-model="editForm.position"
-          :options="positionOptions"
-          class="w-full"
-        />
-        <span class="text-sm font-medium text-slate-600">Дисципліни</span>
-        <div class="flex flex-wrap gap-3">
-          <div
-            v-for="d in disciplines"
-            :key="d.id"
-            class="flex items-center gap-2"
-          >
-            <Checkbox
-              :inputId="'edit-disc-' + d.id"
-              :modelValue="editForm.disciplineIds.includes(d.id)"
-              binary
-              @update:modelValue="
-                (checked) =>
-                  toggleDiscipline(editForm.disciplineIds, d.id, checked)
-              "
-            />
-            <label
-              :for="'edit-disc-' + d.id"
-              class="text-sm cursor-pointer select-none"
+      <div class="flex flex-col gap-4 py-3">
+        <div class="flex flex-col gap-2">
+          <label for="teacher-name" class="font-semibold text-slate-700 text-sm">ПІБ викладача</label>
+          <InputText
+            id="teacher-name"
+            v-model="editForm.name"
+            class="w-full rounded-xl"
+            required
+          />
+        </div>
+        <div class="flex flex-col gap-2">
+          <label for="teacher-position" class="font-semibold text-slate-700 text-sm">Посада</label>
+          <Select
+            id="teacher-position"
+            v-model="editForm.position"
+            :options="['Професор', 'Доцент', 'Асистент']"
+            class="w-full rounded-xl"
+            required
+          />
+        </div>
+        <div class="flex flex-col gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100 mt-2">
+          <span class="text-sm font-semibold text-slate-700">Дисципліни викладача:</span>
+          <div class="flex flex-wrap gap-x-6 gap-y-3 mt-1">
+            <div
+              v-for="d in disciplines"
+              :key="d.id"
+              class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer select-none"
             >
-              {{ d.name }}
-            </label>
+              <Checkbox
+                v-model="editForm.disciplineIds"
+                :value="d.id"
+                :inputId="'edit-t-disc-' + d.id"
+              />
+              <label :for="'edit-t-disc-' + d.id" class="cursor-pointer font-medium">{{ d.name }}</label>
+            </div>
           </div>
         </div>
       </div>
       <template #footer>
         <Button
           label="Скасувати"
+          icon="pi pi-times"
           severity="secondary"
-          @click="editDialogVisible = false"
+          text
+          class="rounded-xl"
+          @click="closeEditDialog"
         />
-        <Button label="Зберегти" icon="pi pi-check" @click="saveEdit" />
+        <Button
+          label="Зберегти"
+          icon="pi pi-check"
+          severity="success"
+          class="rounded-xl px-4"
+          @click="saveEdit"
+        />
       </template>
     </Dialog>
   </div>

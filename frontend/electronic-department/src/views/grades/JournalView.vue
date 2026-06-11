@@ -44,7 +44,9 @@ const journalRows = computed(() => {
   if (!teacherId.value) return [];
   let rows = department.journalForTeacher(teacherId.value);
   if (selectedDisciplineId.value != null) {
-    rows = rows.filter((r) => r.disciplineId === selectedDisciplineId.value);
+    rows = rows.filter(
+      (r) => r.discipline_id === selectedDisciplineId.value,
+    );
   }
   return rows;
 });
@@ -119,13 +121,14 @@ const updateGrade = async (row) => {
               :min="0"
               :max="100"
               :useGrouping="false"
-              inputClass="font-bold text-center"
-              class="grade-input"
-              style="width: 90px"
+              inputClass="grade-input"
               @blur="updateGrade(slotProps.data)"
             />
           </template>
         </Column>
+        <template #empty>
+          <div class="empty-message">Записів не знайдено.</div>
+        </template>
       </DataTable>
     </template>
   </div>

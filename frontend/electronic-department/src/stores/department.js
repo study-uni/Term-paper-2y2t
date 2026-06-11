@@ -2,13 +2,29 @@ import { defineStore } from "pinia";
 import api from "../api";
 
 const normalizeStudent = (student) => ({
-  ...student,
+  id: student.id,
+  name: student.name,
   groupId: student.group_id ?? student.groupId,
+  groupName: student.group_name ?? student.groupName ?? null,
 });
 
 const normalizeTeacher = (teacher) => ({
-  ...teacher,
-  disciplineIds: teacher.discipline_ids ?? teacher.disciplineIds,
+  id: teacher.id,
+  name: teacher.name,
+  position: teacher.position,
+  disciplineIds: teacher.discipline_ids ?? teacher.disciplineIds ?? [],
+});
+
+const normalizeGrade = (grade) => ({
+  id: grade.id,
+  student_id: grade.student_id,
+  discipline_id: grade.discipline_id,
+  disciplineId: grade.discipline_id,
+  teacher_id: grade.teacher_id,
+  grade: grade.grade,
+  student: grade.student ?? "—",
+  subject: grade.subject ?? "—",
+  teacher: grade.teacher ?? "—",
 });
 
 const gradeToEcts = (grade) => {
@@ -70,9 +86,11 @@ export const useDepartmentStore = defineStore("department", {
           .map((g) => ({
             ...g,
             discipline:
+              g.subject ??
               state.disciplines.find((d) => d.id === g.discipline_id)?.name ??
               "—",
-            teacher: formatTeacherShortName(state.teachers, g.teacher_id),
+            teacher:
+              g.teacher ?? formatTeacherShortName(state.teachers, g.teacher_id),
             ECTS: gradeToEcts(g.grade),
           }));
     },
@@ -90,8 +108,11 @@ export const useDepartmentStore = defineStore("department", {
           .map((g) => ({
             ...g,
             student:
-              state.students.find((s) => s.id === g.student_id)?.name ?? "—",
+              g.student ??
+              state.students.find((s) => s.id === g.student_id)?.name ??
+              "—",
             subject:
+              g.subject ??
               state.disciplines.find((d) => d.id === g.discipline_id)?.name ??
               "—",
           }));
@@ -113,7 +134,7 @@ export const useDepartmentStore = defineStore("department", {
       }
     },
 
-    async initPrivate(role) {
+    async initPrivate(role, profileId = null) {
       try {
         await Promise.all([this.fetchGroups(), this.fetchStudents()]);
         if (role === "student") {
@@ -253,14 +274,14 @@ export const useDepartmentStore = defineStore("department", {
     // --- Grades ---
     async fetchGradesForStudent() {
       const response = await api.get("/grades/my");
-      this.grades = response.data;
+      this.grades = response.data.map(normalizeGrade);
     },
 
     async fetchGradesForTeacher(disciplineId = null) {
       const params = {};
       if (disciplineId) params.discipline_id = disciplineId;
       const response = await api.get("/grades/journal", { params });
-      this.grades = response.data;
+      this.grades = response.data.map(normalizeGrade);
     },
 
     async updateGrade(gradeId, value) {
@@ -279,7 +300,7 @@ export const useDepartmentStore = defineStore("department", {
         discipline_id: Number(disciplineId),
         teacher_id: Number(teacherId),
       });
-      const newGrade = response.data;
+      const newGrade = normalizeGrade(response.data);
 
       const idx = this.grades.findIndex((g) => g.id === newGrade.id);
       if (idx >= 0) {

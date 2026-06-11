@@ -2,54 +2,71 @@
 import { ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useDepartmentStore } from "../stores/department";
-import DataTable from "primevue/datatable";
-import Column from "primevue/column";
 import InputText from "primevue/inputtext";
 import Button from "primevue/button";
+import DataTable from "primevue/datatable";
+import Column from "primevue/column";
 import Dialog from "primevue/dialog";
 
 const department = useDepartmentStore();
 const { groups } = storeToRefs(department);
 
 const newGroupName = ref("");
-const editDialogVisible = ref(false);
+const groupError = ref("");
+
+const isEditDialogVisible = ref(false);
 const editForm = ref({ id: null, name: "" });
 
-const openEdit = (item) => {
-  editForm.value = { ...item };
-  editDialogVisible.value = true;
-};
-
-const saveEdit = async () => {
-  try {
-    await department.updateGroup(editForm.value.id, editForm.value.name);
-    editDialogVisible.value = false;
-  } catch (e) {
-    console.error("Failed to save edit:", e);
-  }
-};
-
 const addGroup = async () => {
-  if (!newGroupName.value.trim()) return;
+  groupError.value = "";
+  const name = newGroupName.value.trim();
+  if (!name) return;
   try {
-    await department.addGroup(newGroupName.value.trim());
+    await department.addGroup(name);
     newGroupName.value = "";
   } catch (e) {
     console.error("Failed to add group:", e);
+    groupError.value = e.response?.data?.detail ?? "Не вдалося додати групу";
+  }
+};
+
+const openEditDialog = (group) => {
+  editForm.value = { ...group };
+  isEditDialogVisible.value = true;
+};
+
+const closeEditDialog = () => {
+  isEditDialogVisible.value = false;
+  editForm.value = { id: null, name: "" };
+};
+
+const saveEdit = async () => {
+  const { id, name } = editForm.value;
+  if (!name.trim()) return;
+  try {
+    await department.updateGroup(id, name.trim());
+    closeEditDialog();
+  } catch (e) {
+    console.error("Failed to save edit:", e);
   }
 };
 </script>
 
 <template>
-  <div>
+  <div class="space-y-6">
+    <div v-if="groupError" class="error-message">
+      {{ groupError }}
+    </div>
+
+    <!-- Add Group Form -->
     <form
       @submit.prevent="addGroup"
-      class="flex gap-2 items-center mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg shadow-sm"
+      class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center mb-6 p-5 bg-white border border-slate-200 rounded-2xl shadow-sm"
     >
       <InputText
         v-model="newGroupName"
         placeholder="Назва групи (напр. Б-121-24-5)"
-        class="flex-1"
+        class="flex-1 rounded-xl"
         required
       />
       <Button
@@ -57,11 +74,25 @@ const addGroup = async () => {
         label="Додати групу"
         icon="pi pi-plus"
         severity="success"
+        class="rounded-xl px-5"
       />
     </form>
 
-    <DataTable :value="groups" class="p-datatable-sm" responsiveLayout="scroll">
-      <Column field="name" header="Група" />
+    <!-- Groups Table -->
+    <DataTable
+      :value="groups"
+      class="p-datatable-sm"
+      responsiveLayout="scroll"
+      :rows="10"
+      paginator
+      paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+      currentPageReportTemplate="Показано від {first} до {last} з {totalRecords} груп"
+    >
+      <Column header="Група" sortable field="name">
+        <template #body="slotProps">
+          <span class="font-medium text-slate-800">{{ slotProps.data.name }}</span>
+        </template>
+      </Column>
       <Column header="Дії" style="width: 8rem; text-align: right">
         <template #body="slotProps">
           <div class="flex gap-2 justify-end">
@@ -70,13 +101,17 @@ const addGroup = async () => {
               severity="info"
               size="small"
               rounded
-              @click="openEdit(slotProps.data)"
+              outlined
+              title="Редагувати"
+              @click="openEditDialog(slotProps.data)"
             />
             <Button
               icon="pi pi-trash"
               severity="danger"
               size="small"
               rounded
+              outlined
+              title="Видалити"
               @click="department.removeGroup(slotProps.data.id)"
             />
           </div>
@@ -84,23 +119,43 @@ const addGroup = async () => {
       </Column>
     </DataTable>
 
+    <!-- Edit Dialog -->
     <Dialog
-      v-model:visible="editDialogVisible"
-      header="Редагувати групу"
+      v-model:visible="isEditDialogVisible"
       modal
-      :style="{ width: '28rem' }"
+      header="Редагувати групу"
+      class="w-full max-w-md"
+      :style="{ width: '90vw' }"
+      :breakpoints="{ '960px': '75vw', '641px': '90vw' }"
     >
-      <div class="flex flex-col gap-3 pt-2">
-        <label class="font-medium text-slate-700 text-sm">Назва групи</label>
-        <InputText v-model="editForm.name" class="w-full" autofocus />
+      <div class="flex flex-col gap-4 py-3">
+        <div class="flex flex-col gap-2">
+          <label for="group-name" class="font-semibold text-slate-700 text-sm">Назва групи</label>
+          <InputText
+            id="group-name"
+            v-model="editForm.name"
+            class="w-full rounded-xl"
+            required
+            @keyup.enter="saveEdit"
+          />
+        </div>
       </div>
       <template #footer>
         <Button
           label="Скасувати"
+          icon="pi pi-times"
           severity="secondary"
-          @click="editDialogVisible = false"
+          text
+          class="rounded-xl"
+          @click="closeEditDialog"
         />
-        <Button label="Зберегти" icon="pi pi-check" @click="saveEdit" />
+        <Button
+          label="Зберегти"
+          icon="pi pi-check"
+          severity="success"
+          class="rounded-xl px-4"
+          @click="saveEdit"
+        />
       </template>
     </Dialog>
   </div>
